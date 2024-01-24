@@ -1,0 +1,92 @@
+/* style.css */
+
+body {
+    font-family: 'Arial', sans-serif;
+    margin: 0;
+    
+}
+
+.grid-wrapper {
+    display: grid;
+    grid-template-columns: 15% 85%;
+    grid-template-rows: 1fr;
+    height: 100vh; 
+}
+
+.item {
+    padding: 20px;
+    box-sizing: border-box;
+}
+
+.sidebar {
+    color: white;
+    background: #142d4c;
+}
+
+.content {
+    display: flex;
+    flex-wrap: wrap;
+    background: #142d4c; 
+}
+
+.chart-container {
+    width: 100%;
+    box-sizing: border-box;
+    margin-bottom: 20px;
+    box-shadow: rgba(0, 0, 0, 0.35) 0px 5px 15px;
+    padding: 2%;
+    border-radius: 5px;
+    background-color: rgba(255, 255, 255, 98%)
+}
+
+canvas {
+    max-width: 100%;
+    display: block;
+}
+
+.datepicker {
+    color: white;
+    display: flex;
+    flex-direction: column;
+    padding: 5%;
+    background: #385170; 
+    border-radius: 5px;
+    margin-right: 2%;
+    box-shadow: rgba(0, 0, 0, 0.35) 0px 5px 15px;
+    margin-bottom: 30px;
+}
+
+.applyButton {
+    margin: 5px;
+    margin-top: 5%;
+    box-shadow: rgba(0, 0, 0, 0.35) 0px 5px 15px;
+}
+
+.resetButton {
+    margin: 5px;
+    margin-top: 1%;
+    box-shadow: rgba(0, 0, 0, 0.35) 0px 5px 15px;
+}
+
+.statistics {
+    display: flex;
+    flex-wrap: wrap;
+    text-align: center;
+    align-items: center;
+    justify-content: center;
+    gap: 75px;
+}
+
+.occupancy-pair {
+    margin-top: 35px;
+    border: 1px solid #ccc; 
+    border-radius: 3px;
+    padding: 3px 15px 3px 15px;
+    display: flex;
+    flex-direction: column;
+}
+
+.occupancy-label,
+.occupancy-value {
+    text-align: center;
+}
