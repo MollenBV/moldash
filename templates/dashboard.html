@@ -9,12 +9,14 @@
     <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
     <link rel="stylesheet" type="text/css"
         href="https://cdn.jsdelivr.net/npm/daterangepicker@3.1.0/daterangepicker.css">
-    <!-- Include jQuery (required by DateRangePicker) -->
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
-    <!-- Include DateRangePicker JavaScript -->
     <script type="text/javascript" src="https://cdn.jsdelivr.net/npm/daterangepicker@3.1.0/moment.min.js"></script>
     <script type="text/javascript" src="https://cdn.jsdelivr.net/npm/daterangepicker@3.1.0/daterangepicker.js"></script>
     <link rel="stylesheet" href="static/css/bootstrap.min.css">
+    <script src="static/js/bootstrap.bundle.min.js"></script>
+
+    <script src="static/js/javascript.js"></script>
+
 </head>
 
 <body>
@@ -24,12 +26,6 @@
             <h2>Filter Options</h2>
 
             <div class="datepicker">
-                <!-- Date Picker for Single Date -->
-                <label for="singleDateFilter">Select Date:</label>
-                <input type="date" id="singleDateFilter" name="singleDateFilter">
-                <br>
-                <p>Or: </p>
-
                 <!-- Date Range Picker -->
                 <label for="dateRangeFilter">Select Date Range:</label>
                 <input type="text" id="dateRangeFilter" name="dateRangeFilter">
@@ -92,132 +88,33 @@
                 <div class="statistics">
                     <div class="occupancy-pair">
                         <div class="occupancy-label">Average Occupancy:</div>
-                        <div class="occupancy-value" id="">0</div>
+                        <div class="occupancy-value" id="avgCustomOccupancyValue"></div>
                     </div>
 
                     <div class="occupancy-pair">
                         <div class="occupancy-label">Peak Occupancy:</div>
-                        <div class="occupancy-value" id="">0</div>
+                        <div class="occupancy-value" id="peakCustomOccupancyValue"></div>
                     </div>
 
                     <div class="occupancy-pair">
                         <div class="occupancy-label">Flow Rate:</div>
-                        <div class="occupancy-value" id="">0%</div>
+                        <div class="occupancy-value" id="avgCustomFlowRateValue"></div>
                     </div>
 
                     <div class="occupancy-pair">
                         <div class="occupancy-label">Passenger Turnaround Time:</div>
-                        <div class="occupancy-value" id="">0</div>
+                        <div class="occupancy-value" id="avgCustomPassengerTurnaroundTimeValue"></div>
                     </div>
 
                     <div class="occupancy-pair">
                         <div class="occupancy-label">Average Wait Time:</div>
-                        <div class="occupancy-value" id="">0 minutes</div>
+                        <div class="occupancy-value" id="avgCustomWaitTimeValue"></div>
                     </div>
                 </div>
             </div>
         </div>
     </div>
     <script src="static/js/bootstrap.bundle.min.js"></script>
-    <script>
-        document.addEventListener('DOMContentLoaded', function () {
-            // Add event listeners to toggle input fields
-            var singleDateFilter = document.getElementById('singleDateFilter');
-            var dateRangeFilter = document.getElementById('dateRangeFilter');
-
-            singleDateFilter.addEventListener('input', function () {
-                dateRangeFilter.disabled = this.value !== '';
-            });
-
-            dateRangeFilter.addEventListener('input', function () {
-                singleDateFilter.disabled = this.value !== '';
-            });
-        });
-
-        function applyDateFilter() {
-            // Implement your filter logic here
-            alert("Filter Toegevoegd Zemmels!"); // Replace with your logic
-        }
-    </script>
-    <script>
-        $(function () {
-            $('#dateRangeFilter').daterangepicker();
-        });
-
-        document.addEventListener('DOMContentLoaded', function () {
-            // Fetch Waiting Area Data
-            fetch('/waiting_area_data')
-                .then(response => response.json())
-                .then(data => {
-                    var ctx = document.getElementById('waitingAreaChart').getContext('2d');
-                    new Chart(ctx, {
-                        type: 'line',
-                        data: {
-                            labels: data.labels,
-                            datasets: data.datasets.map(dataset => ({
-                                label: dataset.label,
-                                data: dataset.data,
-                                borderColor: dataset.borderColor,
-                                borderWidth: dataset.borderWidth,
-                                fill: dataset.fill
-                            }))
-                        },
-                        options: {
-                            scales: {
-                                x: [{
-                                    type: 'time',
-                                    time: {
-                                        unit: 'minute'
-                                    }
-                                }],
-                                y: [{
-                                    ticks: {
-                                        beginAtZero: true
-                                    }
-                                }]
-                            }
-                        }
-                    });
-                });
-
-            // Fetch Customs Area Data
-            fetch('/customs_area_data')
-                .then(response => response.json())
-                .then(data => {
-                    var ctx = document.getElementById('customsAreaChart').getContext('2d');
-                    new Chart(ctx, {
-                        type: 'line',
-                        data: {
-                            labels: data.labels,
-                            datasets: data.datasets.map(dataset => ({
-                                label: dataset.label,
-                                data: dataset.data,
-                                borderColor: dataset.borderColor,
-                                borderWidth: dataset.borderWidth,
-                                fill: dataset.fill
-                            }))
-                        },
-                        options: {
-                            scales: {
-                                x: [{
-                                    type: 'time',
-                                    time: {
-                                        unit: 'minute'
-                                    }
-                                }],
-                                y: [{
-                                    ticks: {
-                                        beginAtZero: true
-                                    }
-                                }]
-                            }
-                        }
-                    });
-                });
-        });
-    </script>
-
-
 </body>
 
 </html>

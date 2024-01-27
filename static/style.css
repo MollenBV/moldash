@@ -56,9 +56,16 @@ canvas {
     margin-bottom: 30px;
 }
 
+#dateRangeFilter {
+    border-radius: 5px;
+    border-color: rgb(21, 12, 147);
+    padding: 2px;
+}
+
 .applyButton {
     margin: 5px;
-    margin-top: 5%;
+    margin-top: 8%;
+    margin-bottom: 8%;
     box-shadow: rgba(0, 0, 0, 0.35) 0px 5px 15px;
 }
 

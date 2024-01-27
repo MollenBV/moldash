@@ -1,58 +1,91 @@
-# import requests
-# import json
-# from faker import Faker
-# from datetime import datetime, timedelta
+# import keyboard
+# import time
 
-# fake = Faker()
+# class CustomsArea:
+#     def __init__(self):
+#         self.points = {
+#             'Entrance': 1,
+#             'Before passport': 2,
+#             'After passport': 3,
+#             'Exit': 4
+#         }
+#         self.point_counts = {point: 0 for point in self.points}
 
-# def generate_waiting_area_data():
-#     return {
-#         'taken_seats': fake.random_int(min=0, max=50),
-#         'free_seats': 0,  # Set to 0 initially
-#         'total_people': 0,  # Set to 0 initially
-#         'timestamp': datetime.utcnow().isoformat(),
-#     }
+#     def move_to_point(self, point_name):
+#         if point_name in self.points:
+#             point = self.points[point_name]
+#             self.point_counts[point_name] += 1
+#             print(f"Moved to point {point_name:>20} ({point})     Count: {self.point_counts[point_name]:<40}")
+#         else:
+#             print(f"Invalid point {point_name}.")
 
-# def generate_customs_area_data():
-#     return {
-#         'entrance_point': fake.random_int(min=0, max=20),
-#         'before_passport_point': fake.random_int(min=0, max=20),
-#         'after_passport_point': fake.random_int(min=0, max=20),
-#         'exit_point': fake.random_int(min=0, max=20),
-#         'current_people_count': 0,  # Set to 0 initially
-#         'timestamp': datetime.utcnow().isoformat(),
-#     }
+# def main():
+#     customs_area = CustomsArea()
 
-# def send_waiting_area_data():
-#     url = 'http://localhost:5000/waiting_area'
-#     data = generate_waiting_area_data()
-#     response = requests.post(url, json=data)
-#     print(f"Waiting Area Data Sent: {response.status_code}")
+#     while True:
+#         try:
+#             if keyboard.is_pressed('q'):
+#                 customs_area.move_to_point('Entrance')
+#                 time.sleep(0.2)
+#             elif keyboard.is_pressed('w'):
+#                 customs_area.move_to_point('Before passport')
+#                 time.sleep(0.2)
+#             elif keyboard.is_pressed('e'):
+#                 customs_area.move_to_point('After passport')
+#                 time.sleep(0.2)
+#             elif keyboard.is_pressed('r'):
+#                 customs_area.move_to_point('Exit')
+#                 time.sleep(0.2)
+#         except KeyboardInterrupt:
+#             break
 
-# def send_customs_area_data():
-#     url = 'http://localhost:5000/customs_area'
-#     data = generate_customs_area_data()
-#     response = requests.post(url, json=data)
-#     print(f"Customs Area Data Sent: {response.status_code}")
+# if __name__ == "__main__":
+#     main()
+import requests
+import json
+from faker import Faker
+from datetime import datetime, timedelta
 
-# if __name__ == '__main__':
-#     # Sending data to Flask server
-#     send_waiting_area_data()
-#     send_customs_area_data()
+fake = Faker()
 
-def estimate_people_in_room(taken_seats, total_seats=500, multiplier=1.5):
-    # Calculate the percentage of taken seats
-    percentage_taken = (taken_seats / total_seats) * 100
+def generate_waiting_area_data():
+    # Generate a timestamp within the last 5 days
+    timestamp = datetime.utcnow() - timedelta(days=fake.random_int(min=0, max=10))
+    
+    return {
+        'taken_seats': fake.random_int(min=0, max=500),
+        'timestamp': timestamp.isoformat(),
+    }
 
-    # Assuming each person occupies one seat, estimate the number of people
-    estimated_people = int((percentage_taken / 100) * total_seats)
+def generate_customs_area_data():
+    # Generate a timestamp within the last 5 days
+    timestamp = datetime.utcnow() - timedelta(days=fake.random_int(min=0, max=10))
 
-    # Apply the multiplier to account for additional people beyond seated capacity
-    estimated_people_with_multiplier = int(estimated_people * multiplier)
+    return {
+        'entrance_point': fake.random_int(min=0, max=200),
+        'before_passport_point': fake.random_int(min=0, max=200),
+        'after_passport_point': fake.random_int(min=0, max=200),
+        'exit_point': fake.random_int(min=0, max=200),
+        'current_people_count': fake.random_int(min=10, max=400),
+        'timestamp': timestamp.isoformat(),
+    }
 
-    return estimated_people_with_multiplier
+def send_waiting_area_data():
+    url = 'http://localhost:5000/waiting_area'
+    data = generate_waiting_area_data()
+    response = requests.post(url, json=data)
+    print(f"Waiting Area Data Sent: {response.status_code}")
 
-# Example usage:
-taken_seats = 900  # Replace with the actual number of taken seats
-estimated_people = estimate_people_in_room(taken_seats)
-print(f"Estimated number of people in the room: {estimated_people}")
+def send_customs_area_data():
+    url = 'http://localhost:5000/customs_area'
+    data = generate_customs_area_data()
+    response = requests.post(url, json=data)
+    print(f"Customs Area Data Sent: {response.status_code}")
+
+if __name__ == '__main__':
+    # Sending data to Flask server
+    for x in range(75):
+        send_waiting_area_data()
+        send_customs_area_data()
+
+
