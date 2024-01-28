@@ -7,6 +7,8 @@ from watchdog.events import FileSystemEventHandler
 class ChangeHandler(FileSystemEventHandler):
     """ Handler for file system changes. Restarts the Flask app when a change is detected. """
     def on_any_event(self, event):
+        if event.src_path.endswith("nohup.out"):
+            return  # Ignore changes to nohup.out
         print(f"Change detected in {event.src_path}. Restarting Flask app...")
         subprocess.run(["pkill", "-f", "app.py"])
         time.sleep(1)  # Give some time to release resources
