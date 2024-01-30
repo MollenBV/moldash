@@ -174,3 +174,31 @@ function updateChart(chart, newData) {
     });
     chart.update();
 }
+
+function exportData(area) {
+    let dateRange = document.getElementById('dateRangeFilter').value;
+    let dates = dateRange.split(' - ');
+    let startDate = dates[0];
+    let endDate = dates[1];
+
+    let exportUrl = `/export_data_to_csv?start_date=${startDate}&end_date=${endDate}&area=${area}`;
+    window.location.href = exportUrl;
+}
+
+// Event listeners for the export buttons
+document.addEventListener('DOMContentLoaded', function() {
+    const exportWaitingAreaBtn = document.getElementById('exportWaitingArea');
+    const exportCustomsAreaBtn = document.getElementById('exportCustomsArea');
+
+    if (exportWaitingAreaBtn) {
+        exportWaitingAreaBtn.addEventListener('click', function() {
+            exportData('waiting_area');
+        });
+    }
+
+    if (exportCustomsAreaBtn) {
+        exportCustomsAreaBtn.addEventListener('click', function() {
+            exportData('customs_area');
+        });
+    }
+});

@@ -14,7 +14,6 @@
     <script type="text/javascript" src="https://cdn.jsdelivr.net/npm/daterangepicker@3.1.0/daterangepicker.js"></script>
     <link rel="stylesheet" href="static/css/bootstrap.min.css">
     <script src="static/js/bootstrap.bundle.min.js"></script>
-
     <script src="static/js/javascript.js"></script>
 
 </head>
@@ -33,6 +32,11 @@
                 <button class="applyButton btn btn-primary" onclick="applyDateFilter()">Apply Filter</button>
                 <button class="resetButton btn btn-danger">Reset Filter</button>
             </div>
+
+            <h2>Export Data</h2>
+
+                <button class="exportButton btn btn-success" id="exportWaitingArea">Export Waiting Area</button>
+                <button class="exportButton btn btn-success" id="exportCustomsArea">Export Customs Area</button>
 
             <!-- <h2>Statistics</h2>
             <div class="statistics">
@@ -114,6 +118,7 @@
             </div>
         </div>
     </div>
+    <script src="{{ url_for('static', filename='javascript.js') }}"></script>
     <script src="static/js/bootstrap.bundle.min.js"></script>
 </body>
 

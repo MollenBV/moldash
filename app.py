@@ -1,8 +1,8 @@
-from flask import Flask, render_template, request, jsonify
+from flask import Flask, render_template, request, jsonify, send_file
 from flask_sqlalchemy import SQLAlchemy
 from datetime import datetime, timedelta, timezone
 from sqlalchemy import or_, and_, func
-import traceback
+import traceback, csv, io
 
 
 
@@ -460,6 +460,51 @@ def get_statistics():
         traceback.print_exc()
         return jsonify({'error': 'Internal Server Error'}), 500
 
+@app.route('/export_data_to_csv')
+def export_data_to_csv():
+    try:
+        start_date = request.args.get('start_date')
+        end_date = request.args.get('end_date')
+        area = request.args.get('area')
+
+        # Convert start_date and end_date to datetime objects
+        start_datetime = datetime.strptime(start_date, '%m/%d/%Y')
+        end_datetime = datetime.strptime(end_date, '%m/%d/%Y') + timedelta(days=1)
+
+        # Filter data based on the area
+        if area == 'waiting_area':
+            data = WaitingArea.query.filter(WaitingArea.timestamp.between(start_datetime, end_datetime)).all()
+            # Define the column names for the CSV file
+            column_names = ['ID', 'Total Seats', 'Taken Seats', 'Free Seats', 'Total People', 'Timestamp']
+            # Create CSV data
+            csv_data = [[getattr(d, column) for column in ['id', 'total_seats', 'taken_seats', 'free_seats', 'total_people', 'timestamp']] for d in data]
+        elif area == 'customs_area':
+            data = CustomsArea.query.filter(CustomsArea.timestamp.between(start_datetime, end_datetime)).all()
+            column_names = ['ID', 'Entrance Point', 'Before Passport Point', 'After Passport Point', 'Exit Point', 'Current People Count', 'Timestamp']
+            csv_data = [[getattr(d, column) for column in ['id', 'entrance_point', 'before_passport_point', 'after_passport_point', 'exit_point', 'current_people_count', 'timestamp']] for d in data]
+        else:
+            return jsonify({'error': 'Invalid area specified'}), 400
+
+        # Create a string buffer
+        buffer = io.StringIO()
+        csv_writer = csv.writer(buffer)
+        csv_writer.writerow(column_names)
+        csv_writer.writerows(csv_data)
+        buffer.seek(0)
+
+        # Send the CSV file as a download
+        return send_file(
+            io.BytesIO(buffer.getvalue().encode()),
+            mimetype='text/csv',
+            as_attachment=True,
+            download_name=f"{area}_{start_date}_to_{end_date}.csv"
+        )
+    
+    except Exception as e:
+        error_message = f"An error occurred: {str(e)}"
+        print(error_message)
+        traceback.print_exc()
+        return jsonify({'error': 'Internal Server Error'}), 500
 
 @app.route('/waiting_area_data')
 def waiting_area_data():

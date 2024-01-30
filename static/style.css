@@ -72,6 +72,19 @@ canvas {
 .resetButton {
     margin: 5px;
     margin-top: 1%;
+    margin-bottom: 8%;
+    box-shadow: rgba(0, 0, 0, 0.35) 0px 5px 15px;
+}
+
+.exportButton {
+    width: 200px; /* Set a fixed width */
+    display: flex; /* Use flexbox to center contents */
+    justify-content: center; /* Center horizontally */
+    align-items: center; /* Center vertically */
+    text-align: center; /* Ensure text is centered */
+    margin: 5px;
+    margin-top: 8%;
+    padding: 3px 15px 3px 15px;
     box-shadow: rgba(0, 0, 0, 0.35) 0px 5px 15px;
 }
 
@@ -88,7 +101,6 @@ canvas {
     margin-top: 35px;
     border: 1px solid #ccc; 
     border-radius: 3px;
-    padding: 3px 15px 3px 15px;
     display: flex;
     flex-direction: column;
 }
