@@ -10,13 +10,11 @@ app = Flask(__name__)
 app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///passenger_tracking.db'
 db = SQLAlchemy(app)
 
-
-
 ################################################################################
 ### CONFIG
 ################################################################################
 
-number_of_seats_in_waiting_area = 500
+number_of_seats_in_waiting_area = 1
 
 
 class WaitingArea(db.Model):
@@ -129,6 +127,8 @@ def receive_customs_area_data():
 
         current_time = datetime.now() 
         data['timestamp'] = current_time
+        current_time = datetime.now() 
+        data['timestamp'] = current_time
 
         # Maak een nieuw CustomsArea-object en commit naar de database
         customs_area_data = CustomsArea(
@@ -149,10 +149,6 @@ def receive_customs_area_data():
     except Exception as e:
         print(f"An error has occurred: {e}")
         return jsonify({'message': 'Error'}), 500
-
-
-
-
 
 def get_waiting_area_data():
     """
@@ -202,6 +198,7 @@ def get_waiting_area_data():
             },
         ]
     }
+
 
     return data
 
