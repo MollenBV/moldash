@@ -174,6 +174,7 @@ def get_waiting_area_data():
                 'data': [entry.taken_seats for entry in waiting_area_data],
                 'borderColor': 'rgba(75, 192, 192, 1)',
                 'borderWidth': 1,
+                'backgroundColor': 'rgba(75, 192, 192, 0.9)',  # Adjust this to match the border color
                 'fill': False
             },
             {
@@ -181,6 +182,7 @@ def get_waiting_area_data():
                 'data': [entry.free_seats for entry in waiting_area_data],
                 'borderColor': 'rgba(255, 99, 132, 1)',
                 'borderWidth': 1,
+                'backgroundColor': 'rgba(255, 99, 132, 0.9)',  # Adjust this to match the border color
                 'fill': False
             },
             {
@@ -188,6 +190,7 @@ def get_waiting_area_data():
                 'data': [entry.total_seats for entry in waiting_area_data],
                 'borderColor': 'rgba(255, 0, 178, 1)',
                 'borderWidth': 1,
+                'backgroundColor': 'rgba(255, 0, 178, 0.9)',  # Adjust this to match the border color
                 'fill': False
             },
             {
@@ -195,10 +198,12 @@ def get_waiting_area_data():
                 'data': [entry.total_people for entry in waiting_area_data],
                 'borderColor': 'rgba(51, 255, 51, 1)',
                 'borderWidth': 1,
+                'backgroundColor': 'rgba(51, 255, 51, 0.9)',  # Adjust this to match the border color
                 'fill': False
             },
         ]
     }
+
     return data
 
 def get_customs_area_data():
