@@ -10,8 +10,8 @@ import random
 
 def generate_waiting_area_data():
     return {
-        'taken_seats': random.randint(0, 500),
-        'Sensor': 'Pressuresensor' + str(random.randint(0, 500)),
+        'taken_seats': random.randint(0, 10),
+        'Sensor': 'Pressuresensor' + str(random.randint(0, 10)),
         'status': random.choice(["Aan", "Uit"])
     }
 
@@ -22,7 +22,6 @@ def generate_customs_area_data():
         'before_passport_point': 0,
         'after_passport_point': 0,
         'exit_point': 0,
-        'current_people_count': 0,
     }
 
 def send_waiting_area_data():

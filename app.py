@@ -36,7 +36,7 @@ class WaitingArea(db.Model):
     taken_seats = db.Column(db.Integer)
     free_seats = db.Column(db.Integer)
     total_people = db.Column(db.Integer)
-    sensor_id = db.Column(db.String(50), unique=True, nullable=False)
+    sensor_id = db.Column(db.String(50), nullable=False)
     status = db.Column(db.String(10), nullable=False)
     timestamp = db.Column(DateTime, default=datetime.utcnow)
 
@@ -107,7 +107,6 @@ def receive_waiting_area_data():
         status = data.get('Status', '').upper()
         taken_seats = calculate_taken_seats_dict(sensor_id=sensor_id, sensor_status=status, dictionary=seat_sensor_dict)
 
-        # taken_seats = 1 if status == 'AAN' else 0
         new_sensor_data = WaitingArea(
             total_seats=number_of_seats_in_waiting_area,
             taken_seats=taken_seats,
@@ -228,11 +227,10 @@ def get_customs_area_data():
 
     customs_area_data = CustomsArea.query.filter(CustomsArea.timestamp.between(start_time, end_time)).all()
     customs_area_data = sorted(customs_area_data, key=lambda entry: entry.timestamp)
-    print(customs_area_data)
     data = {
         'labels': [entry.timestamp.strftime('%Y-%m-%d %H:%M:%S') for entry in customs_area_data],
         'datasets': [
-            {
+                {
                     'label': 'Exit Point (Customs Area)',
                     'data': [entry.exit_point for entry in customs_area_data],
                     'borderColor': 'rgba(255, 205, 86, 1)',
@@ -491,12 +489,6 @@ def get_statistics():
                 occupancy_rate_waiting = seat_turnover_rate_waiting = avg_wait_time_waiting = ""
         else:
             avg_occupancy_waiting = peak_occupancy_waiting = occupancy_rate_waiting = seat_turnover_rate_waiting = avg_wait_time_waiting = ""
-
-
-
-        print("avg occupancy" + str(avg_occupancy_waiting))
-        print("Peak occupancy" + str(peak_occupancy_waiting))
-        print("rate occupancy" + str(occupancy_rate_waiting))
 
         # Calculate statistics for customs area
         if customs_area_data:

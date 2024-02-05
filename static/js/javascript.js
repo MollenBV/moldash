@@ -46,11 +46,11 @@ function initializeChart(chartId, chartData) {
                     chart.update();
                 }
             },
-            elements: {
-                line: {
-                    tension: 0.4  // Pas dit aan als je de spanning van de lijnen wilt aanpassen
-                }
-            }
+            // elements: {
+            //     line: {
+            //         tension: 0.4  // Pas dit aan als je de spanning van de lijnen wilt aanpassen
+            //     }
+            // }
         }
     });
     return chart;
