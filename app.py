@@ -131,8 +131,8 @@ def receive_customs_area_data():
         data = request.json
         print(f"Binnengekomen Data op /customs_area:\n    {data}\n")
 
-        current_time = datetime.now() + timedelta(hours=1) 
-        data['timestamp'] = current_time.strftime('%Y-%m-%d %H:%M:%S')
+        current_time = datetime.now() 
+        data['timestamp'] = current_time
 
         # Maak een nieuw CustomsArea-object en commit naar de database
         customs_area_data = CustomsArea(
