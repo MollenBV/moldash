@@ -10,13 +10,11 @@ app = Flask(__name__)
 app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///passenger_tracking.db'
 db = SQLAlchemy(app)
 
-
-
 ################################################################################
 ### CONFIG
 ################################################################################
 
-number_of_seats_in_waiting_area = 500
+number_of_seats_in_waiting_area = 1
 
 
 class WaitingArea(db.Model):
@@ -25,6 +23,8 @@ class WaitingArea(db.Model):
     taken_seats = db.Column(db.Integer)
     free_seats = db.Column(db.Integer)
     total_people = db.Column(db.Integer)
+    sensor_id = db.Column(db.String(50), unique=True, nullable=False)
+    status = db.Column(db.String(10), nullable=False)
     timestamp = db.Column(db.DateTime(timezone=True))
 
 class CustomsArea(db.Model):
@@ -87,17 +87,38 @@ def receive_waiting_area_data():
     """
     Functie om binnenkomende data op "URL:/waiting_area" waar data naartoe gestuurd kan worden. Deze word dan verwerkt en als alles juist it verwerkt in de database
     """
-    data = request.json
-    print(f"Binnengekomen Data op /waiting_area :\n    {data} \n")
-    current_time = datetime.now() + timedelta(hours=1) 
-    data['timestamp'] = current_time.strftime('%Y-%m-%d %H:%M:%S')
-    data['total_seats'] = number_of_seats_in_waiting_area
-    data['free_seats'] = calculate_free_seats(data['taken_seats'])
-    data['total_people'] = calculate_total_people_in_waiting_area(data['taken_seats'])
-    waiting_area_entry = WaitingArea(**data)
-    db.session.add(waiting_area_entry)
-    db.session.commit()
-    return jsonify({'message': 'Waiting Area data received successfully'}), 201
+    try:
+        data = request.json
+        sensor_id = data.get('Sensor', '')
+        status = data.get('Status', '').upper()
+
+        # Timezone
+        current_time = datetime.now()
+        data['timestamp'] = current_time.strftime('%Y-%m-%d %H:%M:%S')
+
+        # Check if the sensor already exists
+        existing_sensor = WaitingArea.query.filter_by(sensor_id=sensor_id).first()
+        if existing_sensor:
+            existing_sensor.status = status
+            existing_sensor.timestamp = current_time
+        else:
+            # If the sensor is new, increment the total seats
+            global number_of_seats_in_waiting_area
+            number_of_seats_in_waiting_area += 1
+
+            new_sensor_data = WaitingArea(
+                sensor_id=sensor_id,
+                status=status,
+                timestamp=current_time
+            )
+            db.session.add(new_sensor_data)
+        
+        db.session.commit()
+        
+        return jsonify({'message': 'Waiting Area data received successfully'}), 201
+    except Exception as e:
+        print(f"An error occurred: {e}")
+        return jsonify({'message': 'Error processing the waiting area data'}), 500
 
 
 
