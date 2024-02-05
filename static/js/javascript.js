@@ -76,6 +76,7 @@ function initializeChart(chartId, chartData) {
 function fetchAndInitializeCharts() {
     fetchChartData('/waiting_area_data', 'waitingAreaChart');
     fetchChartData('/customs_area_data', 'customsAreaChart');
+    setInterval(fetchAndInitializeCharts, 5000);
 }
 
 // Function to fetch chart data
