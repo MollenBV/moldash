@@ -91,7 +91,8 @@ function fetchChartData(url, chartId) {
 }
 
 // Periodically fetch and initialize charts every 5 seconds
-setInterval(fetchAndInitializeCharts, 5000);
+// setInterval(fetchAndInitializeCharts, 5000);
+setInterval(applyDateFilter, 5000);
 // Apply Date Filter function
 function updateCharts(data) {
     console.log('Received data:', data);
