@@ -1,10 +1,10 @@
 from flask import Flask, render_template, request, jsonify, send_file
 from flask_sqlalchemy import SQLAlchemy
 from datetime import datetime, timedelta, timezone
-from sqlalchemy import or_, and_, func
+from sqlalchemy import or_, and_, func, DateTime
 import traceback, csv, io
 from json.decoder import JSONDecodeError
-
+import random
 
 app = Flask(__name__)
 app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///passenger_tracking.db'
@@ -25,7 +25,9 @@ class WaitingArea(db.Model):
     taken_seats = db.Column(db.Integer)
     free_seats = db.Column(db.Integer)
     total_people = db.Column(db.Integer)
-    timestamp = db.Column(db.DateTime(timezone=True))
+    sensor_id = db.Column(db.String(50), unique=True, nullable=False)
+    status = db.Column(db.String(10), nullable=False)
+    timestamp = db.Column(DateTime, default=datetime.utcnow)
 
 class CustomsArea(db.Model):
     id = db.Column(db.Integer, primary_key=True)
@@ -34,7 +36,7 @@ class CustomsArea(db.Model):
     after_passport_point = db.Column(db.Integer)
     exit_point = db.Column(db.Integer)
     current_people_count = db.Column(db.Integer)
-    timestamp = db.Column(db.DateTime(timezone=True))
+    timestamp = db.Column(DateTime, default=datetime.utcnow)
 
 
 
@@ -84,21 +86,39 @@ def main_page():
 
 @app.route('/waiting_area', methods=['POST'])
 def receive_waiting_area_data():
-    """
-    Functie om binnenkomende data op "URL:/waiting_area" waar data naartoe gestuurd kan worden. Deze word dan verwerkt en als alles juist it verwerkt in de database
-    """
-    data = request.json
-    print(f"Binnengekomen Data op /waiting_area :\n    {data} \n")
-    current_time = datetime.now() + timedelta(hours=1) 
-    data['timestamp'] = current_time.strftime('%Y-%m-%d %H:%M:%S')
-    data['total_seats'] = number_of_seats_in_waiting_area
-    data['free_seats'] = calculate_free_seats(data['taken_seats'])
-    data['total_people'] = calculate_total_people_in_waiting_area(data['taken_seats'])
-    waiting_area_entry = WaitingArea(**data)
-    db.session.add(waiting_area_entry)
-    db.session.commit()
-    return jsonify({'message': 'Waiting Area data received successfully'}), 201
+    try:
+        data = request.json
+        print(f"Binnengekomen Data op /waiting_area:\n    {data}\n")
 
+        current_time = datetime.now()
+        data['timestamp'] = current_time
+        sensor_id = data['Sensor']
+        status = data.get('Status', '').upper()
+        taken_seats = number_of_seats_in_waiting_area - random.randint(1, 500)
+
+        # taken_seats = 1 if status == 'AAN' else 0
+        new_sensor_data = WaitingArea(
+            total_seats=number_of_seats_in_waiting_area,
+            taken_seats=taken_seats,
+            free_seats=calculate_free_seats(taken_seats),
+            total_people=calculate_total_people_in_waiting_area(taken_seats),
+            sensor_id=sensor_id,
+            status=status,
+            timestamp=current_time
+        )
+
+        db.session.add(new_sensor_data)
+        db.session.commit()
+        return jsonify({'message': 'Waiting Area data received successfully'}), 201
+
+    except ValueError as ve:
+        db.session.rollback()  # Rollback in case of error
+        print(f"ValueError occurred: {ve}")
+        return jsonify({'message': 'Error processing the waiting area data'}), 400
+    except Exception as e:
+        db.session.rollback()  # Rollback in case of error
+        print(f"An error occurred: {e}")
+        return jsonify({'message': 'Error processing the waiting area data'}), 500
 
 
 @app.route('/customs_area', methods=['POST'])
@@ -107,8 +127,8 @@ def receive_customs_area_data():
         data = request.json
         print(f"Binnengekomen Data op /customs_area:\n    {data}\n")
 
-        current_time = datetime.now() + timedelta(hours=1) 
-        data['timestamp'] = current_time.strftime('%Y-%m-%d %H:%M:%S')
+        current_time = datetime.now() 
+        data['timestamp'] = current_time
 
         # Maak een nieuw CustomsArea-object en commit naar de database
         customs_area_data = CustomsArea(
@@ -145,7 +165,6 @@ def get_waiting_area_data():
 
     waiting_area_data = WaitingArea.query.filter(WaitingArea.timestamp.between(start_time, end_time)).all()
     waiting_area_data = sorted(waiting_area_data, key=lambda entry: entry.timestamp)
-    print(waiting_area_data)
     data = {
         'labels': [entry.timestamp.strftime('%Y-%m-%d %H:%M:%S') for entry in waiting_area_data],
         'datasets': [
@@ -154,6 +173,7 @@ def get_waiting_area_data():
                 'data': [entry.taken_seats for entry in waiting_area_data],
                 'borderColor': 'rgba(75, 192, 192, 1)',
                 'borderWidth': 1,
+                'backgroundColor': 'rgba(75, 192, 192, 0.9)',  
                 'fill': False
             },
             {
@@ -161,6 +181,7 @@ def get_waiting_area_data():
                 'data': [entry.free_seats for entry in waiting_area_data],
                 'borderColor': 'rgba(255, 99, 132, 1)',
                 'borderWidth': 1,
+                'backgroundColor': 'rgba(255, 99, 132, 0.9)',  
                 'fill': False
             },
             {
@@ -168,6 +189,7 @@ def get_waiting_area_data():
                 'data': [entry.total_seats for entry in waiting_area_data],
                 'borderColor': 'rgba(255, 0, 178, 1)',
                 'borderWidth': 1,
+                'backgroundColor': 'rgba(255, 0, 178, 0.9)', 
                 'fill': False
             },
             {
@@ -175,10 +197,12 @@ def get_waiting_area_data():
                 'data': [entry.total_people for entry in waiting_area_data],
                 'borderColor': 'rgba(51, 255, 51, 1)',
                 'borderWidth': 1,
+                'backgroundColor': 'rgba(51, 255, 51, 0.9)', 
                 'fill': False
             },
         ]
     }
+
     return data
 
 def get_customs_area_data():
