@@ -20,7 +20,7 @@ function initializeChart(chartId, chartData) {
             plugins: {
                 title: {
                     display: true,
-                    text: chartId === 'waitingAreaChart' ? 'Stacked Bar Chart - Waiting Area' : 'Line Chart - Customs Area'
+                    text: chartId === 'waitingAreaChart' ? 'Stacked Bar Chart - Waiting Area' : 'Stacked Line Chart - Customs Area'
                 },
             },
             responsive: true,
