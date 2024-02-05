@@ -14,8 +14,21 @@ db = SQLAlchemy(app)
 ### CONFIG
 ################################################################################
 
-number_of_seats_in_waiting_area = 500
+seat_sensor_dict = {
+    'druksensor': "UIT",
+    'druksensor_1': "UIT",
+    'druksensor_2': "UIT",
+    'druksensor_3': "UIT",
+    'druksensor_4': "UIT",
+    'druksensor_5': "UIT",
+    'druksensor_6': "UIT",
+    'druksensor_7': "UIT",
+    'druksensor_8': "UIT",
+    'druksensor_9': "UIT",
+    'druksensor_10': "UIT",
+}
 
+number_of_seats_in_waiting_area = 10
 
 class WaitingArea(db.Model):
     id = db.Column(db.Integer, primary_key=True)
@@ -92,7 +105,7 @@ def receive_waiting_area_data():
         data['timestamp'] = current_time
         sensor_id = data['Sensor']
         status = data.get('Status', '').upper()
-        taken_seats = number_of_seats_in_waiting_area - random.randint(1, 500)
+        taken_seats = calculate_taken_seats_dict(sensor_id=sensor_id, sensor_status=status, dictionary=seat_sensor_dict)
 
         # taken_seats = 1 if status == 'AAN' else 0
         new_sensor_data = WaitingArea(
@@ -424,7 +437,16 @@ def get_average_wait_time_custom(data_points):
         return ""
     return ""
 
+def calculate_taken_seats_dict(sensor_id, sensor_status, dictionary=seat_sensor_dict):
+    taken_seats = 0
+    print(f"Sensor ID: {sensor_id}")
+    print(f"Sensor Status: {sensor_status}")
 
+    for value in dictionary.values():
+        if value == "AAN":
+            taken_seats += 1
+
+    return taken_seats
 
 @app.route('/get_statistics', methods=['GET'])
 def get_statistics():
