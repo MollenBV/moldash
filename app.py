@@ -143,14 +143,16 @@ def receive_customs_area_data():
         current_time = datetime.now() 
         data['timestamp'] = current_time
 
+        current_people_count = data['entrance_point'] + data['before_passport_point'] + data['after_passport_point']
+
         # Maak een nieuw CustomsArea-object en commit naar de database
         customs_area_data = CustomsArea(
             entrance_point=data['entrance_point'],
             before_passport_point=data['before_passport_point'],
             after_passport_point=data['after_passport_point'],
             exit_point=data['exit_point'],
-            current_people_count=data['current_people_count'],
-            timestamp=current_time
+            current_people_count=current_people_count,
+            timestamp=current_time 
         )
 
         db.session.add(customs_area_data)
