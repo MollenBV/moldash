@@ -48,10 +48,11 @@ canvas {
     color: white;
     display: flex;
     flex-direction: column;
-    padding: 5%;
+    padding: 8%;
     background: #385170; 
     border-radius: 5px;
-    margin-right: 2%;
+    min-width: 110%;
+    margin: 1%;
     box-shadow: rgba(0, 0, 0, 0.35) 0px 5px 15px;
     margin-bottom: 30px;
 }
