@@ -89,6 +89,7 @@ def receive_waiting_area_data():
     """
     try:
         data = request.json
+        print(f"Binnengekomen Data op /waiting_area:\n    {data}\n")
         sensor_id = data.get('Sensor', '')
         status = data.get('Status', '').upper()
 
