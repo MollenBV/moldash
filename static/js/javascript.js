@@ -2,19 +2,26 @@
 function initializeChart(chartId, chartData) {
     var ctx = document.getElementById(chartId).getContext('2d');
     var chartType = chartId === 'waitingAreaChart' ? 'bar' : 'line';
+    
+    // Extract the line dataset separately
+    var lineDataset = chartData.datasets.find(dataset => dataset.label === 'Entrance Point Count (Customs Area)');
+
+    // Remove the line dataset temporarily
+    var datasetsWithoutLine = chartData.datasets.filter(dataset => dataset.label !== 'Entrance Point Count (Customs Area)');
+
     var chart = new Chart(ctx, {
         type: chartType,
         data: {
             labels: chartData.labels,
-            datasets: chartData.datasets.map(dataset => ({
+            datasets: datasetsWithoutLine.map(dataset => ({
                 label: dataset.label,
                 data: dataset.data,
                 borderColor: dataset.borderColor,
                 borderWidth: dataset.borderWidth,
-                backgroundColor: dataset.backgroundColor,  // Background color from the backend
+                backgroundColor: dataset.backgroundColor,
                 fill: dataset.fill,
-                hidden: dataset.label === 'Total Seats (Waiting Area)' || dataset.label === 'Total People (Waiting Area)'  // Verberg deze datasets standaard
-            }))
+                hidden: dataset.label === 'Total Seats (Waiting Area)' || dataset.label === 'Total People (Waiting Area)'
+            })),
         },
         options: {
             plugins: {
@@ -29,7 +36,7 @@ function initializeChart(chartId, chartData) {
                     stacked: chartType === 'bar',  // Enable stacking for x-axis only for bar charts
                 },
                 y: {
-                    stacked: true  // Enable stacking for y-axis for both bar and line charts
+                    stacked: chartType === 'bar',  // Enable stacking for y-axis only for bar charts
                 }
             },
             legend: {
@@ -46,15 +53,22 @@ function initializeChart(chartId, chartData) {
                     chart.update();
                 }
             },
-            // elements: {
-            //     line: {
-            //         tension: 0.4  // Pas dit aan als je de spanning van de lijnen wilt aanpassen
-            //     }
-            // }
+            elements: {
+                line: {
+                    tension: 0.4  // Adjust tension for line chart
+                }
+            }
         }
     });
+
+    // Add the line dataset back to the chart
+    if (chartType === 'line' && lineDataset) {
+        chart.data.datasets.push(lineDataset);
+    }
+
     return chart;
 }
+
 
 
 

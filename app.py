@@ -99,12 +99,13 @@ def main_page():
 def receive_waiting_area_data():
     try:
         data = request.json
+        print(data)
         print(f"Binnengekomen Data op /waiting_area:\n    {data}\n")
 
         current_time = datetime.now()
         data['timestamp'] = current_time
         sensor_id = data['Sensor']
-        status = data.get('Status', '').upper()
+        status = data.get('Status')
         taken_seats = calculate_taken_seats_dict(sensor_id=sensor_id, sensor_status=status, dictionary=seat_sensor_dict)
 
         new_sensor_data = WaitingArea(
@@ -122,11 +123,11 @@ def receive_waiting_area_data():
         return jsonify({'message': 'Waiting Area data received successfully'}), 201
 
     except ValueError as ve:
-        db.session.rollback()  # Rollback in case of error
+        db.session.rollback()  
         print(f"ValueError occurred: {ve}")
         return jsonify({'message': 'Error processing the waiting area data'}), 400
     except Exception as e:
-        db.session.rollback()  # Rollback in case of error
+        db.session.rollback()  
         print(f"An error occurred: {e}")
         return jsonify({'message': 'Error processing the waiting area data'}), 500
 
@@ -438,14 +439,15 @@ def get_average_wait_time_custom(data_points):
     return ""
 
 def calculate_taken_seats_dict(sensor_id, sensor_status, dictionary=seat_sensor_dict):
-    taken_seats = 0
     print(f"Sensor ID: {sensor_id}")
     print(f"Sensor Status: {sensor_status}")
 
-    for value in dictionary.values():
-        if value == "AAN":
-            taken_seats += 1
+    dictionary[sensor_id] = sensor_status  
 
+    taken_seats = sum(1 for value in dictionary.values() if value == "AAN")
+
+    print(f"Updated seat_sensor_dict: {dictionary}")
+    print(f"Taken Seats: {taken_seats}")
     return taken_seats
 
 @app.route('/get_statistics', methods=['GET'])

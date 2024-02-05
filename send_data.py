@@ -10,9 +10,8 @@ import random
 
 def generate_waiting_area_data():
     return {
-        'taken_seats': random.randint(0, 10),
         'Sensor': 'Pressuresensor' + str(random.randint(0, 10)),
-        'status': random.choice(["Aan", "Uit"])
+        'Status': random.choice(["AAN", "UIT"])
     }
 
 
@@ -36,24 +35,9 @@ def send_customs_area_data():
     response = requests.post(url, json=data)
     print(f"Customs Area Data Sent: {response.status_code}")
 
-# if __name__ == '__main__':
-#     # Sending data to Flask server
-#     for x in range(75):
-#         send_waiting_area_data()
-#         send_customs_area_data()
+if __name__ == '__main__':
 
+    for x in range(75):
+        send_waiting_area_data()
+        send_customs_area_data()
 
-for x in range(10):
-    send_customs_area_data()
-    send_waiting_area_data()
-
-
-
-
-
-
-# from datetime import datetime, timedelta, timezone
-
-# amsterdam_timezone = timezone(timedelta(hours=1))
-# current_time = datetime.now(amsterdam_timezone)
-# print(current_time.strftime('%Y-%m-%d %H:%M:%S'))
