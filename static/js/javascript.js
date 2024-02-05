@@ -1,8 +1,9 @@
 // Function to initialize charts
 function initializeChart(chartId, chartData) {
     var ctx = document.getElementById(chartId).getContext('2d');
+    var chartType = chartId === 'waitingAreaChart' ? 'bar' : 'line';
     var chart = new Chart(ctx, {
-        type: 'line',
+        type: chartType,
         data: {
             labels: chartData.labels,
             datasets: chartData.datasets.map(dataset => ({
@@ -10,22 +11,45 @@ function initializeChart(chartId, chartData) {
                 data: dataset.data,
                 borderColor: dataset.borderColor,
                 borderWidth: dataset.borderWidth,
-                fill: dataset.fill
+                backgroundColor: dataset.backgroundColor,  // Background color from the backend
+                fill: dataset.fill,
+                hidden: dataset.label === 'Total Seats (Waiting Area)' || dataset.label === 'Total People (Waiting Area)'  // Verberg deze datasets standaard
             }))
         },
         options: {
+            plugins: {
+                title: {
+                    display: true,
+                    text: chartId === 'waitingAreaChart' ? 'Stacked Bar Chart - Waiting Area' : 'Line Chart - Customs Area'
+                },
+            },
+            responsive: true,
             scales: {
-                x: [{
-                    type: 'time',
-                    time: {
-                        unit: 'minute'
-                    }
-                }],
-                y: [{
-                    ticks: {
-                        beginAtZero: true
-                    }
-                }]
+                x: {
+                    stacked: chartType === 'bar',  // Enable stacking for x-axis only for bar charts
+                },
+                y: {
+                    stacked: true  // Enable stacking for y-axis for both bar and line charts
+                }
+            },
+            legend: {
+                onClick: (e, legendItem) => {
+                    // Toggle visibility on legend item click
+                    var index = legendItem.datasetIndex;
+                    var chart = e.chart;
+                    var meta = chart.getDatasetMeta(index);
+
+                    // Toggle visibility
+                    meta.hidden = meta.hidden === null ? !chart.data.datasets[index].hidden : null;
+
+                    // Update the chart
+                    chart.update();
+                }
+            },
+            elements: {
+                line: {
+                    tension: 0.4  // Pas dit aan als je de spanning van de lijnen wilt aanpassen
+                }
             }
         }
     });
@@ -82,16 +106,10 @@ function updateHtmlElements(statistics) {
         updateHtmlElement('#avgValue', statistics.avg_occupancy_waiting + '%');
         // Example: Peak Occupancy
         updateHtmlElement('#peakValue', statistics.peak_occupancy_waiting + '%');
-        updateHtmlElement('#occupancyRateValue', statistics.occupancy_rate_waiting + '%');
-        updateHtmlElement('#turnoverRateValue', statistics.seat_turnover_rate_waiting + '%');
-        updateHtmlElement('#avgWaitTimeValue', statistics.avg_wait_time_waiting + '%');
 
         // Update customs area statistics
         updateHtmlElement('#avgCustomOccupancyValue', statistics.avg_occupancy_custom + '%');
         updateHtmlElement('#peakCustomOccupancyValue', statistics.peak_occupancy_custom + '%');
-        updateHtmlElement('#avgCustomFlowRateValue', statistics.avg_flow_rate_custom + '%');
-        updateHtmlElement('#avgCustomPassengerTurnaroundTimeValue', statistics.avg_passenger_turnaround_time_custom + '%');
-        updateHtmlElement('#avgCustomWaitTimeValue', statistics.avg_wait_time_custom + '%');
     }
 }
 
