@@ -14,7 +14,7 @@ db = SQLAlchemy(app)
 ### CONFIG
 ################################################################################
 
-number_of_seats_in_waiting_area = 1
+number_of_seats_in_waiting_area = 500
 
 
 class WaitingArea(db.Model):
@@ -45,7 +45,7 @@ def calculate_free_seats(taken_seats, total_seats=number_of_seats_in_waiting_are
     calculate_free_seats = total_seats - taken_seats
     return calculate_free_seats
 
-def calculate_total_people_in_waiting_area(taken_seats, total_seats=number_of_seats_in_waiting_area, multiplier=1.5):
+def calculate_total_people_in_waiting_area(taken_seats, total_seats=number_of_seats_in_waiting_area, multiplier=1.3):
     """
     Functie om aantal totale personen in de ruimte te berkenen. er vanuitgaande dat niet elke persoon in de ruimte op een stoel zit (staan, leunen, lopen, zitten op de grond).
     """
