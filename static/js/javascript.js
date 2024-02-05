@@ -168,12 +168,19 @@ $(function () {
 
 // Function to update charts with new data
 function updateChart(chart, newData) {
-    chart.data.labels = newData.labels;
-    chart.data.datasets.forEach((dataset, index) => {
-        dataset.data = newData.datasets[index].data;
-    });
-    chart.update();
+    if (newData && newData.labels && newData.datasets) {
+        chart.data.labels = newData.labels;
+        chart.data.datasets.forEach((dataset, index) => {
+            if (newData.datasets[index] && newData.datasets[index].data) {
+                dataset.data = newData.datasets[index].data;
+            }
+        });
+        chart.update();
+    } else {
+        console.error('Invalid newData object:', newData);
+    }
 }
+
 
 function exportData(area) {
     let dateRange = document.getElementById('dateRangeFilter').value;

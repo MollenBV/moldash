@@ -3,7 +3,7 @@ from flask_sqlalchemy import SQLAlchemy
 from datetime import datetime, timedelta, timezone
 from sqlalchemy import or_, and_, func
 import traceback, csv, io
-
+from json.decoder import JSONDecodeError
 
 
 app = Flask(__name__)
@@ -88,7 +88,9 @@ def receive_waiting_area_data():
     Functie om binnenkomende data op "URL:/waiting_area" waar data naartoe gestuurd kan worden. Deze word dan verwerkt en als alles juist it verwerkt in de database
     """
     data = request.json
-    data['timestamp'] = datetime.fromisoformat(data['timestamp'])
+    print(f"Binnengekomen Data op /waiting_area :\n    {data} \n")
+    current_time = datetime.now() + timedelta(hours=1) 
+    data['timestamp'] = current_time.strftime('%Y-%m-%d %H:%M:%S')
     data['total_seats'] = number_of_seats_in_waiting_area
     data['free_seats'] = calculate_free_seats(data['taken_seats'])
     data['total_people'] = calculate_total_people_in_waiting_area(data['taken_seats'])
@@ -101,15 +103,35 @@ def receive_waiting_area_data():
 
 @app.route('/customs_area', methods=['POST'])
 def receive_customs_area_data():
-    """
-    Functie om binnenkomende data op "URL:/customs_area" waar data naartoe gestuurd kan worden. Deze word dan verwerkt en als alles juist it verwerkt in de database
-    """
-    data = request.json
-    data['timestamp'] = datetime.fromisoformat(data['timestamp'])
-    customs_area_entry = CustomsArea(**data)
-    db.session.add(customs_area_entry)
-    db.session.commit()
-    return jsonify({'message': 'Customs Area data received successfully'}), 201
+    try:
+        data = request.json
+        print(f"Binnengekomen Data op /customs_area:\n    {data}\n")
+
+        current_time = datetime.now() + timedelta(hours=1) 
+        data['timestamp'] = current_time.strftime('%Y-%m-%d %H:%M:%S')
+
+        # Maak een nieuw CustomsArea-object en commit naar de database
+        customs_area_data = CustomsArea(
+            entrance_point=data['entrance_point'],
+            before_passport_point=data['before_passport_point'],
+            after_passport_point=data['after_passport_point'],
+            exit_point=data['exit_point'],
+            current_people_count=data['current_people_count'],
+            timestamp=current_time
+        )
+
+        db.session.add(customs_area_data)
+        db.session.commit()
+
+        return jsonify({'message': 'Customs Area data received successfully'}), 201
+    except JSONDecodeError:
+        return jsonify({'message': 'Invalid JSON format'}), 400
+    except Exception as e:
+        print(f"An error has occurred: {e}")
+        return jsonify({'message': 'Error'}), 500
+
+
+
 
 
 def get_waiting_area_data():
@@ -170,31 +192,31 @@ def get_customs_area_data():
 
     customs_area_data = CustomsArea.query.filter(CustomsArea.timestamp.between(start_time, end_time)).all()
     customs_area_data = sorted(customs_area_data, key=lambda entry: entry.timestamp)
-    
+    print(customs_area_data)
     data = {
         'labels': [entry.timestamp.strftime('%Y-%m-%d %H:%M:%S') for entry in customs_area_data],
         'datasets': [
             {
-                'label': 'Exit Point (Customs Area)',
-                'data': [entry.exit_point for entry in customs_area_data],
-                'borderColor': 'rgba(255, 205, 86, 1)',
-                'borderWidth': 1,
-                'fill': False
-            },
-            {
-                'label': 'Current People Count (Customs Area)',
-                'data': [entry.current_people_count for entry in customs_area_data],
-                'borderColor': 'rgba(54, 162, 235, 1)',
-                'borderWidth': 1,
-                'fill': False
-            },
-            {
-                'label': 'Entrance Point Count (Customs Area)',
-                'data': [entry.entrance_point for entry in customs_area_data],
-                'borderColor': 'rgba(255, 99, 71, 1)',
-                'borderWidth': 1,
-                'fill': False
-            }
+                    'label': 'Exit Point (Customs Area)',
+                    'data': [entry.exit_point for entry in customs_area_data],
+                    'borderColor': 'rgba(255, 205, 86, 1)',
+                    'borderWidth': 1,
+                    'fill': False
+                },
+                {
+                    'label': 'Current People Count (Customs Area)',
+                    'data': [entry.current_people_count for entry in customs_area_data],
+                    'borderColor': 'rgba(54, 162, 235, 1)',
+                    'borderWidth': 1,
+                    'fill': False
+                },
+                {
+                    'label': 'Entrance Point Count (Customs Area)',
+                    'data': [entry.entrance_point for entry in customs_area_data],
+                    'borderColor': 'rgba(255, 99, 71, 1)',
+                    'borderWidth': 1,
+                    'fill': False
+                },
         ]
     }
     return data
@@ -255,7 +277,7 @@ def get_date_range():
                     'borderColor': 'rgba(255, 99, 71, 1)',
                     'borderWidth': 1,
                     'fill': False
-                }
+                },
             ]
         }
 
@@ -284,11 +306,11 @@ def get_date_range():
                     'fill': False
                 },
                 {
-                'label': 'Total People (Waiting Area)',
-                'data': [entry.total_people for entry in waiting_area_data],
-                'borderColor': 'rgba(51, 255, 51, 1)',
-                'borderWidth': 1,
-                'fill': False
+                    'label': 'Total People (Waiting Area)',
+                    'data': [entry.total_people for entry in waiting_area_data],
+                    'borderColor': 'rgba(51, 255, 51, 1)',
+                    'borderWidth': 1,
+                    'fill': False
             },
             ]
         }
@@ -517,4 +539,4 @@ def customs_area_data():
     return jsonify(data)
 
 if __name__ == '__main__':
-    app.run(debug=True, port=80)
+    app.run(debug=True, port=80, host="0.0.0.0")
