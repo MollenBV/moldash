@@ -103,7 +103,6 @@ def receive_waiting_area_data():
         print(f"Binnengekomen Data op /waiting_area:\n    {data}\n")
 
         current_time = datetime.now()
-        current_time = current_time - timedelta(days=1)
         data['timestamp'] = current_time
         sensor_id = data['Sensor']
         status = data.get('Status')
@@ -138,8 +137,7 @@ def receive_customs_area_data():
         data = request.json
         print(f"Binnengekomen Data op /customs_area:\n    {data}\n")
 
-        current_time = datetime.now() 
-        current_time = current_time - timedelta(days=1)
+        current_time = datetime.now()
         data['timestamp'] = current_time
 
         current_people_count = data['entrance_point'] + data['before_passport_point'] + data['after_passport_point']
