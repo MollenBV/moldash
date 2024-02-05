@@ -68,9 +68,6 @@ def calculate_total_people_in_waiting_area(taken_seats, total_seats=number_of_se
     return estimated_people_with_multiplier
 
 
-
-
-
 with app.app_context():
     db.create_all()
 
@@ -93,20 +90,20 @@ def main_page():
     
     return render_template('dashboard.html', waiting_area=waiting_area_data, customs_area=customs_area_data)
 
-
+CHART_TIME_FRAME = timedelta(minutes=1)
 
 @app.route('/waiting_area', methods=['POST'])
 def receive_waiting_area_data():
     try:
         data = request.json
-        print(data)
         print(f"Binnengekomen Data op /waiting_area:\n    {data}\n")
 
         current_time = datetime.now()
         data['timestamp'] = current_time
         sensor_id = data['Sensor']
-        status = data.get('Status')
+        status = data.get('Status', '').upper()
         taken_seats = calculate_taken_seats_dict(sensor_id=sensor_id, sensor_status=status, dictionary=seat_sensor_dict)
+
         new_sensor_data = WaitingArea(
             total_seats=number_of_seats_in_waiting_area,
             taken_seats=taken_seats,
@@ -119,14 +116,20 @@ def receive_waiting_area_data():
 
         db.session.add(new_sensor_data)
         db.session.commit()
+
+        # Optional: Clean up old data
+        earliest_time_to_keep = current_time - CHART_TIME_FRAME
+        WaitingArea.query.filter(WaitingArea.timestamp < earliest_time_to_keep).delete()
+        db.session.commit()
+
         return jsonify({'message': 'Waiting Area data received successfully'}), 201
 
     except ValueError as ve:
-        db.session.rollback()  
+        db.session.rollback()  # Rollback in case of error
         print(f"ValueError occurred: {ve}")
         return jsonify({'message': 'Error processing the waiting area data'}), 400
     except Exception as e:
-        db.session.rollback()  
+        db.session.rollback()  # Rollback in case of error
         print(f"An error occurred: {e}")
         return jsonify({'message': 'Error processing the waiting area data'}), 500
 
