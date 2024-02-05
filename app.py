@@ -103,11 +103,11 @@ def receive_waiting_area_data():
         print(f"Binnengekomen Data op /waiting_area:\n    {data}\n")
 
         current_time = datetime.now()
+        current_time = current_time - timedelta(days=1)
         data['timestamp'] = current_time
         sensor_id = data['Sensor']
         status = data.get('Status')
         taken_seats = calculate_taken_seats_dict(sensor_id=sensor_id, sensor_status=status, dictionary=seat_sensor_dict)
-
         new_sensor_data = WaitingArea(
             total_seats=number_of_seats_in_waiting_area,
             taken_seats=taken_seats,
@@ -139,8 +139,7 @@ def receive_customs_area_data():
         print(f"Binnengekomen Data op /customs_area:\n    {data}\n")
 
         current_time = datetime.now() 
-        data['timestamp'] = current_time
-        current_time = datetime.now() 
+        current_time = current_time - timedelta(days=1)
         data['timestamp'] = current_time
 
         current_people_count = data['entrance_point'] + data['before_passport_point'] + data['after_passport_point']
@@ -172,7 +171,7 @@ def get_waiting_area_data():
     cet_timezone = timezone(timedelta(hours=1))
     current_time = datetime.now(cet_timezone)
     end_time = current_time
-    start_time = end_time - timedelta(hours=24)
+    start_time = end_time - timedelta(minutes=5)
 
     waiting_area_data = WaitingArea.query.filter(WaitingArea.timestamp.between(start_time, end_time)).all()
     waiting_area_data = sorted(waiting_area_data, key=lambda entry: entry.timestamp)

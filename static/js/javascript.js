@@ -72,10 +72,8 @@ function initializeChart(chartId, chartData) {
 
 
 
-
 // Function to fetch and initialize charts on page load
 function fetchAndInitializeCharts() {
-
     fetchChartData('/waiting_area_data', 'waitingAreaChart');
     fetchChartData('/customs_area_data', 'customsAreaChart');
 }
@@ -86,10 +84,14 @@ function fetchChartData(url, chartId) {
         .then(response => response.json())
         .then(chartData => {
             window[chartId] = initializeChart(chartId, chartData);
+            // If you want to emit the data to the server every 5 seconds, you can add the following line:
+            socket.emit('update_waiting_area_chart', chartData);
         });
     applyDateFilter();
 }
 
+// Periodically fetch and initialize charts every 5 seconds
+setInterval(fetchAndInitializeCharts, 5000);
 // Apply Date Filter function
 function updateCharts(data) {
     console.log('Received data:', data);
