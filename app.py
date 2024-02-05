@@ -96,21 +96,29 @@ def receive_waiting_area_data():
         amsterdam_timezone = timezone(timedelta(hours=1))
         current_time = datetime.now(amsterdam_timezone)
 
-        # Find the existing sensor by its sensor_id
         existing_sensor = WaitingArea.query.filter_by(sensor_id=sensor_id).first()
         if existing_sensor:
-            # If found, update the existing sensor's status and timestamp
+            # Update the existing sensor's status, taken_seats, free_seats, total_people, and timestamp
             existing_sensor.status = status
             existing_sensor.taken_seats = 1 if status == 'AAN' else 0
             existing_sensor.free_seats = calculate_free_seats(existing_sensor.taken_seats)
             existing_sensor.total_people = calculate_total_people_in_waiting_area(existing_sensor.taken_seats)
             existing_sensor.timestamp = current_time
         else:
-            # This condition should not be reached since sensor_id is always unique and should already exist
-            raise Exception(f"Sensor with id '{sensor_id}' does not exist.")
+            # Create a new sensor record
+            new_sensor_data = WaitingArea(
+                sensor_id=sensor_id,
+                status=status,
+                total_seats=number_of_seats_in_waiting_area,  # Assuming 1 seat per sensor
+                taken_seats=1 if status == 'AAN' else 0,
+                free_seats=calculate_free_seats(1 if status == 'AAN' else 0),
+                total_people=calculate_total_people_in_waiting_area(1 if status == 'AAN' else 0),
+                timestamp=current_time
+            )
+            db.session.add(new_sensor_data)
 
         db.session.commit()
-        return jsonify({'message': 'Waiting Area data updated successfully'}), 200
+        return jsonify({'message': 'Waiting Area data processed successfully'}), 200
 
     except Exception as e:
         db.session.rollback()  # Rollback in case of error
