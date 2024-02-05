@@ -101,24 +101,16 @@ def receive_waiting_area_data():
         if existing_sensor:
             # If found, update the existing sensor's status and timestamp
             existing_sensor.status = status
+            existing_sensor.taken_seats = 1 if status == 'AAN' else 0
+            existing_sensor.free_seats = calculate_free_seats(existing_sensor.taken_seats)
+            existing_sensor.total_people = calculate_total_people_in_waiting_area(existing_sensor.taken_seats)
             existing_sensor.timestamp = current_time
         else:
-            # If not found, create a new sensor record
-            # Logic to calculate seats might need to be updated based on your application's needs
-            taken_seats = 1 if status == 'AAN' else 0
-            new_sensor_data = WaitingArea(
-                total_seats=number_of_seats_in_waiting_area,
-                taken_seats=taken_seats,
-                free_seats=calculate_free_seats(taken_seats),
-                total_people=calculate_total_people_in_waiting_area(taken_seats),
-                sensor_id=sensor_id,
-                status=status,
-                timestamp=current_time
-            )
-            db.session.add(new_sensor_data)
-        
+            # This condition should not be reached since sensor_id is always unique and should already exist
+            raise Exception(f"Sensor with id '{sensor_id}' does not exist.")
+
         db.session.commit()
-        return jsonify({'message': 'Waiting Area data received successfully'}), 201
+        return jsonify({'message': 'Waiting Area data updated successfully'}), 200
 
     except Exception as e:
         db.session.rollback()  # Rollback in case of error
