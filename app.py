@@ -92,21 +92,24 @@ def receive_waiting_area_data():
         sensor_id = data.get('Sensor', '')
         status = data.get('Status', '').upper()
 
-        # Timezone
-        current_time = datetime.now()
-        data['timestamp'] = current_time.strftime('%Y-%m-%d %H:%M:%S')
+        amsterdam_timezone = timezone(timedelta(hours=1))
+        current_time = datetime.now(amsterdam_timezone)
 
-        # Check if the sensor already exists
+        # Find the existing sensor by its sensor_id
         existing_sensor = WaitingArea.query.filter_by(sensor_id=sensor_id).first()
         if existing_sensor:
+            # If found, update the existing sensor's status and timestamp
             existing_sensor.status = status
             existing_sensor.timestamp = current_time
         else:
-            # If the sensor is new, increment the total seats
-            global number_of_seats_in_waiting_area
-            number_of_seats_in_waiting_area += 1
-
+            # If not found, create a new sensor record
+            # Logic to calculate seats might need to be updated based on your application's needs
+            taken_seats = 1 if status == 'AAN' else 0
             new_sensor_data = WaitingArea(
+                total_seats=number_of_seats_in_waiting_area,
+                taken_seats=taken_seats,
+                free_seats=calculate_free_seats(taken_seats),
+                total_people=calculate_total_people_in_waiting_area(taken_seats),
                 sensor_id=sensor_id,
                 status=status,
                 timestamp=current_time
@@ -114,13 +117,12 @@ def receive_waiting_area_data():
             db.session.add(new_sensor_data)
         
         db.session.commit()
-        
         return jsonify({'message': 'Waiting Area data received successfully'}), 201
+
     except Exception as e:
+        db.session.rollback()  # Rollback in case of error
         print(f"An error occurred: {e}")
         return jsonify({'message': 'Error processing the waiting area data'}), 500
-
-
 
 @app.route('/customs_area', methods=['POST'])
 def receive_customs_area_data():
@@ -150,10 +152,6 @@ def receive_customs_area_data():
     except Exception as e:
         print(f"An error has occurred: {e}")
         return jsonify({'message': 'Error'}), 500
-
-
-
-
 
 def get_waiting_area_data():
     """
