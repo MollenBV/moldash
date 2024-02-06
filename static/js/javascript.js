@@ -76,7 +76,6 @@ function initializeChart(chartId, chartData) {
 function fetchAndInitializeCharts() {
     fetchChartData('/waiting_area_data', 'waitingAreaChart');
     fetchChartData('/customs_area_data', 'customsAreaChart');
-    setInterval(fetchAndInitializeCharts, 5000);
 }
 
 // Function to fetch chart data
@@ -85,17 +84,9 @@ function fetchChartData(url, chartId) {
         .then(response => response.json())
         .then(chartData => {
             window[chartId] = initializeChart(chartId, chartData);
-            // If you want to emit the data to the server every 5 seconds, you can add the following line:
-            socket.emit('update_waiting_area_chart', chartData);
         });
     applyDateFilter();
 }
-
-
-// Periodically apply date filter every 5 seconds
-setInterval(function () {
-    applyDateFilter();
-}, 5000);
 
 // Apply Date Filter function
 function updateCharts(data) {
@@ -149,7 +140,11 @@ function applyDateFilter() {
     console.log('Selected Start Date:', startDate);
     console.log('Selected End Date:', endDate);
 
-    // Make an AJAX request to the Flask route with start_date and end_date for updating charts
+    fetchDataAndUpdate(startDate, endDate);
+}
+
+function fetchDataAndUpdate(startDate, endDate) {
+    // AJAX request for updating charts
     $.ajax({
         url: '/get_date_range',
         method: 'GET',
@@ -162,7 +157,7 @@ function applyDateFilter() {
         }
     });
 
-    // Make an AJAX request to the Flask route with start_date and end_date for updating HTML elements
+    // AJAX request for updating HTML elements
     $.ajax({
         url: '/get_statistics',
         method: 'GET',
@@ -175,6 +170,30 @@ function applyDateFilter() {
         }
     });
 }
+
+function updateChartsPeriodically() {
+    // Call this function once to initialize periodic updates
+    setInterval(function() {
+        var startDate = $('#dateRangeFilter').data('daterangepicker').startDate.format('YYYY-MM-DD');
+        var endDate = $('#dateRangeFilter').data('daterangepicker').endDate.format('YYYY-MM-DD');
+
+        // AJAX request just for updating charts, reusing the current date range
+        $.ajax({
+            url: '/get_date_range',
+            method: 'GET',
+            data: { start_date: startDate, end_date: endDate },
+            success: function (data) {
+                updateCharts(data);
+            },
+            error: function (error) {
+                console.error('Error updating charts:', error);
+            }
+        });
+    }, 5000); // Update every 5 seconds
+}
+
+// Initialize the periodic chart updates
+updateChartsPeriodically();
 
 
 // Event listener for Apply Filter button
