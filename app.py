@@ -117,7 +117,7 @@ def receive_waiting_area_data():
         db.session.add(new_sensor_data)
         db.session.commit()
 
-        # Optional: Clean up old data
+        # Clean up old data
         earliest_time_to_keep = current_time - CHART_TIME_FRAME
         WaitingArea.query.filter(WaitingArea.timestamp < earliest_time_to_keep).delete()
         db.session.commit()
@@ -156,6 +156,11 @@ def receive_customs_area_data():
         )
 
         db.session.add(customs_area_data)
+        db.session.commit()
+
+        # Clean up old data
+        earliest_time_to_keep = current_time - CHART_TIME_FRAME
+        CustomsArea.query.filter(CustomsArea.timestamp < earliest_time_to_keep).delete()
         db.session.commit()
 
         return jsonify({'message': 'Customs Area data received successfully'}), 201
