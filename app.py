@@ -6,7 +6,7 @@ import traceback, csv, io
 from json.decoder import JSONDecodeError
 
 ################################################################################
-### CONFIG
+# CONFIG
 ################################################################################
 
 app = Flask(__name__)
@@ -32,9 +32,8 @@ number_of_seats_in_waiting_area = 10
 CHART_TIME_FRAME = timedelta(minutes=1)
 
 
-
 ################################################################################
-### DATABASE
+# DATABASE
 ################################################################################
 
 class WaitingArea(db.Model):
@@ -47,6 +46,7 @@ class WaitingArea(db.Model):
     status = db.Column(db.String(10), nullable=False)
     timestamp = db.Column(DateTime, default=datetime.utcnow)
 
+
 class CustomsArea(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     entrance_point = db.Column(db.Integer)
@@ -57,14 +57,12 @@ class CustomsArea(db.Model):
     timestamp = db.Column(DateTime, default=datetime.utcnow)
 
 
-
 with app.app_context():
     db.create_all()
 
 
-
 ################################################################################
-### FUNCTIONS CALCULATIONS
+# FUNCTIONS CALCULATIONS
 ################################################################################
 
 def calculate_free_seats(taken_seats, total_seats=number_of_seats_in_waiting_area):
@@ -107,7 +105,7 @@ def calculate_average_occupancy(data_points):
     # Check if data_points is None, empty, or an empty string
     if data_points is None or data_points == "":
         return ""
-    
+
     # Sum up taken seats and total seats from data points
     total_taken_seats = sum(entry.taken_seats for entry in data_points)
     total_total_seats = sum(entry.total_seats for entry in data_points)
@@ -128,13 +126,14 @@ def calculate_peak_occupancy(data_points):
     # Check if data_points is None, empty, or an empty list
     if data_points is None or data_points == "" or data_points == []:
         return ""
-    
+
     # Calculate occupancies from data points
-    occupancies = [(entry.taken_seats / entry.total_seats) * 100 for entry in data_points if entry.total_seats != 0]
+    occupancies = [(entry.taken_seats / entry.total_seats) *
+                   100 for entry in data_points if entry.total_seats != 0]
 
     # Check if occupancies list is empty
     if not occupancies:
-        return "" 
+        return ""
 
     # Find the maximum occupancy
     max_occupancy = max(occupancies)
@@ -148,9 +147,10 @@ def get_average_occupancy_custom(data_points):
     # Check if data_points is None, empty, or an empty list
     if data_points is None or data_points == "" or data_points == []:
         return ""
-    
+
     # Calculate the total occupancy using SQLAlchemy aggregate function
-    total_occupancy = db.session.query(func.avg(CustomsArea.current_people_count)).scalar()
+    total_occupancy = db.session.query(
+        func.avg(CustomsArea.current_people_count)).scalar()
     return total_occupancy
 
 
@@ -161,9 +161,10 @@ def get_peak_occupancy_custom(data_points):
     # Check if data_points is None, empty, or an empty list
     if data_points is None or data_points == "" or data_points == []:
         return ""
-    
+
     # Calculate the peak occupancy using SQLAlchemy aggregate function
-    peak_occupancy = db.session.query(func.max(CustomsArea.current_people_count)).scalar()
+    peak_occupancy = db.session.query(
+        func.max(CustomsArea.current_people_count)).scalar()
     return peak_occupancy
 
 
@@ -176,7 +177,7 @@ def calculate_taken_seats_dict(sensor_id, sensor_status, dictionary=seat_sensor_
     print(f"Sensor Status: {sensor_status}")
 
     # Update the dictionary with sensor_id and sensor_status
-    dictionary[sensor_id] = sensor_status  
+    dictionary[sensor_id] = sensor_status
 
     # Count the number of seats that are "AAN" (occupied) in the dictionary
     taken_seats = sum(1 for value in dictionary.values() if value == "AAN")
@@ -187,9 +188,8 @@ def calculate_taken_seats_dict(sensor_id, sensor_status, dictionary=seat_sensor_
     return taken_seats
 
 
-
 ################################################################################
-### APP ROUTES
+# APP ROUTES
 ################################################################################
 
 @app.route('/')
@@ -206,17 +206,20 @@ def main_page():
     current_time = datetime.now(cet_timezone)
 
     # Set start_time to midnight of today
-    start_time = current_time.replace(hour=0, minute=0, second=0, microsecond=0)
+    start_time = current_time.replace(
+        hour=0, minute=0, second=0, microsecond=0)
 
     # Set end_time to the current time
     end_time = current_time
 
     # Query the WaitingArea table in the database for data within the time frame from start_time to end_time
-    waiting_area_data = WaitingArea.query.filter(WaitingArea.timestamp.between(start_time, end_time)).all()
+    waiting_area_data = WaitingArea.query.filter(
+        WaitingArea.timestamp.between(start_time, end_time)).all()
 
     # Query the CustomsArea table in the database for data within the time frame from start_time to end_time
-    customs_area_data = CustomsArea.query.filter(CustomsArea.timestamp.between(start_time, end_time)).all()
-    
+    customs_area_data = CustomsArea.query.filter(
+        CustomsArea.timestamp.between(start_time, end_time)).all()
+
     # Render the dashboard.html template, passing the waiting_area_data and customs_area_data to be used in the template
     return render_template('dashboard.html', waiting_area=waiting_area_data, customs_area=customs_area_data)
 
@@ -243,7 +246,8 @@ def receive_waiting_area_data():
         status = data.get('Status', '').upper()
 
         # Calculate taken seats based on sensor data
-        taken_seats = calculate_taken_seats_dict(sensor_id=sensor_id, sensor_status=status, dictionary=seat_sensor_dict)
+        taken_seats = calculate_taken_seats_dict(
+            sensor_id=sensor_id, sensor_status=status, dictionary=seat_sensor_dict)
 
         # Create a new WaitingArea object with calculated data
         new_sensor_data = WaitingArea(
@@ -262,7 +266,8 @@ def receive_waiting_area_data():
 
         # Clean up old data
         earliest_time_to_keep = current_time - CHART_TIME_FRAME
-        WaitingArea.query.filter(WaitingArea.timestamp < earliest_time_to_keep).delete()
+        WaitingArea.query.filter(
+            WaitingArea.timestamp < earliest_time_to_keep).delete()
         db.session.commit()
 
         # Return success message
@@ -291,12 +296,13 @@ def receive_customs_area_data():
 
         # Get the current time
         current_time = datetime.now()
-        
+
         # Add timestamp to the received data
         data['timestamp'] = current_time
 
         # Calculate the total number of people currently in the customs area
-        current_people_count = data['entrance_point'] + data['before_passport_point'] + data['after_passport_point']
+        current_people_count = data['entrance_point'] + \
+            data['before_passport_point'] + data['after_passport_point']
 
         # Create a new CustomsArea object and commit it to the database
         customs_area_data = CustomsArea(
@@ -305,7 +311,7 @@ def receive_customs_area_data():
             after_passport_point=data['after_passport_point'],
             exit_point=data['exit_point'],
             current_people_count=current_people_count,
-            timestamp=current_time 
+            timestamp=current_time
         )
 
         db.session.add(customs_area_data)
@@ -313,7 +319,8 @@ def receive_customs_area_data():
 
         # Clean up old data
         earliest_time_to_keep = current_time - CHART_TIME_FRAME
-        CustomsArea.query.filter(CustomsArea.timestamp < earliest_time_to_keep).delete()
+        CustomsArea.query.filter(
+            CustomsArea.timestamp < earliest_time_to_keep).delete()
         db.session.commit()
 
         # Return success message
@@ -361,7 +368,9 @@ def get_statistics():
 
         # Convert start_date and end_date to datetime objects
         start_datetime = datetime.strptime(start_date, '%Y-%m-%d')
-        end_datetime = datetime.strptime(end_date, '%Y-%m-%d') + timedelta(days=1)  # Add one day to include the end_date
+        # Add one day to include the end_date
+        end_datetime = datetime.strptime(
+            end_date, '%Y-%m-%d') + timedelta(days=1)
 
         print(f"Start Date: {start_datetime}")
         print(f"End Date: {end_datetime}")
@@ -369,24 +378,30 @@ def get_statistics():
         # Query the CustomsArea table in the database for data within the specified range
         customs_area_data = CustomsArea.query.filter(
             or_(
-                and_(CustomsArea.timestamp >= start_datetime, CustomsArea.timestamp < end_datetime),
-                and_(CustomsArea.timestamp >= start_datetime, CustomsArea.timestamp < end_datetime)
+                and_(CustomsArea.timestamp >= start_datetime,
+                     CustomsArea.timestamp < end_datetime),
+                and_(CustomsArea.timestamp >= start_datetime,
+                     CustomsArea.timestamp < end_datetime)
             )
         ).all()
 
         # Sort the customs area data based on timestamp
-        customs_area_data = sorted(customs_area_data, key=lambda entry: entry.timestamp)
+        customs_area_data = sorted(
+            customs_area_data, key=lambda entry: entry.timestamp)
 
         # Query the WaitingArea table in the database for data within the specified range
         waiting_area_data = WaitingArea.query.filter(
             or_(
-                and_(WaitingArea.timestamp >= start_datetime, WaitingArea.timestamp < end_datetime),
-                and_(WaitingArea.timestamp >= start_datetime, WaitingArea.timestamp < end_datetime)
+                and_(WaitingArea.timestamp >= start_datetime,
+                     WaitingArea.timestamp < end_datetime),
+                and_(WaitingArea.timestamp >= start_datetime,
+                     WaitingArea.timestamp < end_datetime)
             )
         ).all()
 
         # Sort the waiting area data based on timestamp
-        waiting_area_data = sorted(waiting_area_data, key=lambda entry: entry.timestamp)
+        waiting_area_data = sorted(
+            waiting_area_data, key=lambda entry: entry.timestamp)
 
         # Initialize variables to store statistics
         avg_occupancy_waiting = peak_occupancy_waiting = avg_wait_time_waiting = ""
@@ -394,13 +409,17 @@ def get_statistics():
 
         # Calculate statistics for waiting area if data is available
         if waiting_area_data:
-            avg_occupancy_waiting = calculate_average_occupancy(waiting_area_data)
-            peak_occupancy_waiting = calculate_peak_occupancy(waiting_area_data)
+            avg_occupancy_waiting = calculate_average_occupancy(
+                waiting_area_data)
+            peak_occupancy_waiting = calculate_peak_occupancy(
+                waiting_area_data)
 
         # Calculate statistics for customs area if data is available
         if customs_area_data:
-            avg_occupancy_custom = get_average_occupancy_custom(customs_area_data)
-            peak_occupancy_custom = get_peak_occupancy_custom(customs_area_data)
+            avg_occupancy_custom = get_average_occupancy_custom(
+                customs_area_data)
+            peak_occupancy_custom = get_peak_occupancy_custom(
+                customs_area_data)
 
         # Return the statistics as JSON response
         return jsonify({
@@ -419,9 +438,8 @@ def get_statistics():
         return jsonify({'error': 'Internal Server Error'}), 500
 
 
-
 ################################################################################
-### FUNCTIONS AND ROUTES FOR ChartJS
+# FUNCTIONS AND ROUTES FOR ChartJS
 ################################################################################
 
 def get_waiting_area_data():
@@ -441,10 +459,12 @@ def get_waiting_area_data():
     start_time = end_time - timedelta(minutes=5)
 
     # Query the WaitingArea table in the database for data within the time frame from start_time to end_time
-    waiting_area_data = WaitingArea.query.filter(WaitingArea.timestamp.between(start_time, end_time)).all()
+    waiting_area_data = WaitingArea.query.filter(
+        WaitingArea.timestamp.between(start_time, end_time)).all()
 
     # Sort the waiting area data based on timestamp
-    waiting_area_data = sorted(waiting_area_data, key=lambda entry: entry.timestamp)
+    waiting_area_data = sorted(
+        waiting_area_data, key=lambda entry: entry.timestamp)
 
     # Prepare data for the graph
     data = {
@@ -455,7 +475,7 @@ def get_waiting_area_data():
                 'data': [entry.taken_seats for entry in waiting_area_data],
                 'borderColor': 'rgba(75, 192, 192, 1)',
                 'borderWidth': 1,
-                'backgroundColor': 'rgba(75, 192, 192, 0.9)',  
+                'backgroundColor': 'rgba(75, 192, 192, 0.9)',
                 'fill': False
             },
             {
@@ -463,7 +483,7 @@ def get_waiting_area_data():
                 'data': [entry.free_seats for entry in waiting_area_data],
                 'borderColor': 'rgba(255, 99, 132, 1)',
                 'borderWidth': 1,
-                'backgroundColor': 'rgba(255, 99, 132, 0.9)',  
+                'backgroundColor': 'rgba(255, 99, 132, 0.9)',
                 'fill': False
             },
             {
@@ -471,7 +491,7 @@ def get_waiting_area_data():
                 'data': [entry.total_seats for entry in waiting_area_data],
                 'borderColor': 'rgba(255, 0, 178, 1)',
                 'borderWidth': 1,
-                'backgroundColor': 'rgba(255, 0, 178, 0.9)', 
+                'backgroundColor': 'rgba(255, 0, 178, 0.9)',
                 'fill': False
             },
             {
@@ -479,7 +499,7 @@ def get_waiting_area_data():
                 'data': [entry.total_people for entry in waiting_area_data],
                 'borderColor': 'rgba(51, 255, 51, 1)',
                 'borderWidth': 1,
-                'backgroundColor': 'rgba(51, 255, 51, 0.9)', 
+                'backgroundColor': 'rgba(51, 255, 51, 0.9)',
                 'fill': False
             },
         ]
@@ -503,10 +523,12 @@ def get_customs_area_data():
     start_time = end_time - timedelta(hours=24)
 
     # Query the CustomsArea table in the database for data within the time frame from start_time to end_time
-    customs_area_data = CustomsArea.query.filter(CustomsArea.timestamp.between(start_time, end_time)).all()
+    customs_area_data = CustomsArea.query.filter(
+        CustomsArea.timestamp.between(start_time, end_time)).all()
 
     # Sort the customs area data based on timestamp
-    customs_area_data = sorted(customs_area_data, key=lambda entry: entry.timestamp)
+    customs_area_data = sorted(
+        customs_area_data, key=lambda entry: entry.timestamp)
 
     # Prepare data for the graph
     data = {
@@ -551,7 +573,9 @@ def get_date_range():
 
         # Convert start_date and end_date to datetime objects
         start_datetime = datetime.strptime(start_date, '%Y-%m-%d')
-        end_datetime = datetime.strptime(end_date, '%Y-%m-%d') + timedelta(days=1)  # Add one day to include the end_date
+        # Add one day to include the end_date
+        end_datetime = datetime.strptime(
+            end_date, '%Y-%m-%d') + timedelta(days=1)
 
         print(f"Start Date: {start_datetime}")
         print(f"End Date: {end_datetime}")
@@ -562,7 +586,8 @@ def get_date_range():
         ).all()
 
         # Sort the customs area data based on timestamp
-        customs_area_data = sorted(customs_area_data, key=lambda entry: entry.timestamp)
+        customs_area_data = sorted(
+            customs_area_data, key=lambda entry: entry.timestamp)
 
         # Query the WaitingArea table in the database for data within the specified range
         waiting_area_data = WaitingArea.query.filter(
@@ -570,7 +595,8 @@ def get_date_range():
         ).all()
 
         # Sort the waiting area data based on timestamp
-        waiting_area_data = sorted(waiting_area_data, key=lambda entry: entry.timestamp)
+        waiting_area_data = sorted(
+            waiting_area_data, key=lambda entry: entry.timestamp)
 
         # Prepare data for the Customs Area chart
         data_customs_filter_date = {
@@ -634,7 +660,7 @@ def get_date_range():
                 },
             ]
         }
-        
+
         # Return the data for both charts as JSON
         return jsonify({'waiting_area': data_waiting_filter_date, 'customs_area': data_customs_filter_date})
 
@@ -644,9 +670,8 @@ def get_date_range():
         return jsonify({'error': 'Internal Server Error'}), 500
 
 
-
 ################################################################################
-### FUNCTIONS FOR CSV EXPORT
+# FUNCTIONS FOR CSV EXPORT
 ################################################################################
 
 @app.route('/export_data_to_csv')
@@ -662,23 +687,30 @@ def export_data_to_csv():
 
         # Convert start_date and end_date to datetime objects
         start_datetime = datetime.strptime(start_date, '%m/%d/%Y')
-        end_datetime = datetime.strptime(end_date, '%m/%d/%Y') + timedelta(days=1)
+        end_datetime = datetime.strptime(
+            end_date, '%m/%d/%Y') + timedelta(days=1)
 
         # Filter data based on the area
         if area == 'waiting_area':
             # Query WaitingArea table for data within the specified range
-            data = WaitingArea.query.filter(WaitingArea.timestamp.between(start_datetime, end_datetime)).all()
+            data = WaitingArea.query.filter(
+                WaitingArea.timestamp.between(start_datetime, end_datetime)).all()
             # Define column names for CSV file
-            column_names = ['ID', 'Total Seats', 'Taken Seats', 'Free Seats', 'Total People', 'Timestamp']
+            column_names = ['ID', 'Total Seats', 'Taken Seats',
+                            'Free Seats', 'Total People', 'Timestamp']
             # Create CSV data
-            csv_data = [[getattr(d, column) for column in ['id', 'total_seats', 'taken_seats', 'free_seats', 'total_people', 'timestamp']] for d in data]
+            csv_data = [[getattr(d, column) for column in [
+                'id', 'total_seats', 'taken_seats', 'free_seats', 'total_people', 'timestamp']] for d in data]
         elif area == 'customs_area':
             # Query CustomsArea table for data within the specified range
-            data = CustomsArea.query.filter(CustomsArea.timestamp.between(start_datetime, end_datetime)).all()
+            data = CustomsArea.query.filter(
+                CustomsArea.timestamp.between(start_datetime, end_datetime)).all()
             # Define column names for CSV file
-            column_names = ['ID', 'Entrance Point', 'Before Passport Point', 'After Passport Point', 'Exit Point', 'Current People Count', 'Timestamp']
+            column_names = ['ID', 'Entrance Point', 'Before Passport Point',
+                            'After Passport Point', 'Exit Point', 'Current People Count', 'Timestamp']
             # Create CSV data
-            csv_data = [[getattr(d, column) for column in ['id', 'entrance_point', 'before_passport_point', 'after_passport_point', 'exit_point', 'current_people_count', 'timestamp']] for d in data]
+            csv_data = [[getattr(d, column) for column in ['id', 'entrance_point', 'before_passport_point',
+                                                           'after_passport_point', 'exit_point', 'current_people_count', 'timestamp']] for d in data]
         else:
             return jsonify({'error': 'Invalid area specified'}), 400
 
@@ -696,7 +728,7 @@ def export_data_to_csv():
             as_attachment=True,
             download_name=f"{area}_{start_date}_to_{end_date}.csv"
         )
-    
+
     except Exception as e:
         # Handle any exceptions and return an error message
         error_message = f"An error occurred: {str(e)}"
