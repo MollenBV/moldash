@@ -1,81 +1,98 @@
 <!DOCTYPE html>
 <html lang="en">
-
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Occupancy Graphs</title>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
-    <link rel="stylesheet" type="text/css"
-        href="https://cdn.jsdelivr.net/npm/daterangepicker@3.1.0/daterangepicker.css">
+    <link
+      rel="stylesheet"
+      href="{{ url_for('static', filename='style.css') }}"
+    />
+    <link
+      rel="stylesheet"
+      type="text/css"
+      href="https://cdn.jsdelivr.net/npm/daterangepicker@3.1.0/daterangepicker.css"
+    />
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
-    <script type="text/javascript" src="https://cdn.jsdelivr.net/npm/daterangepicker@3.1.0/moment.min.js"></script>
-    <script type="text/javascript" src="https://cdn.jsdelivr.net/npm/daterangepicker@3.1.0/daterangepicker.js"></script>
-    <link rel="stylesheet" href="static/css/bootstrap.min.css">
+    <script
+      type="text/javascript"
+      src="https://cdn.jsdelivr.net/npm/daterangepicker@3.1.0/moment.min.js"
+    ></script>
+    <script
+      type="text/javascript"
+      src="https://cdn.jsdelivr.net/npm/daterangepicker@3.1.0/daterangepicker.js"
+    ></script>
+    <link rel="stylesheet" href="static/css/bootstrap.min.css" />
     <script src="static/js/bootstrap.bundle.min.js"></script>
     <script src="static/js/javascript.js"></script>
+  </head>
 
-</head>
-
-<body>
+  <body>
     <div class="grid-wrapper">
-        <div class="item sidebar">
-            <!-- Side menu content goes here -->
-            <h2>Filter Options</h2>
+      <div class="item sidebar">
+        <!-- Side menu content goes here -->
+        <h2>Filter Options</h2>
 
-            <div class="datepicker">
-                <!-- Date Range Picker -->
-                <label for="dateRangeFilter">Select Date Range:</label>
-                <input type="text" id="dateRangeFilter" name="dateRangeFilter">
-                <!-- Apply Filter Button -->
-                <button class="applyButton btn btn-primary" onclick="applyDateFilter()">Apply Filter</button>
-                <button class="resetButton btn btn-danger">Reset Filter</button>
-            </div>
-
-            <h2>Export Data</h2>
-
-                <button class="exportButton btn btn-success" id="exportWaitingArea">Export Waiting Area</button>
-                <button class="exportButton btn btn-success" id="exportCustomsArea">Export Customs Area</button>
+        <div class="datepicker">
+          <!-- Date Range Picker -->
+          <label for="dateRangeFilter">Select Date Range:</label>
+          <input type="text" id="dateRangeFilter" name="dateRangeFilter" />
+          <!-- Apply Filter Button -->
+          <button
+            class="applyButton btn btn-primary"
+            onclick="applyDateFilter()"
+          >
+            Apply Filter
+          </button>
+          <button class="resetButton btn btn-danger">Reset Filter</button>
         </div>
 
+        <h2>Export Data</h2>
 
-        <div class="item content">
-            <div class="chart-container">
-                <h2>Waiting Area Occupancy</h2>
-                <canvas id="waitingAreaChart" width="300" height="50"></canvas>
-                <div class="statistics">
-                    <div class="occupancy-pair">
-                        <div class="occupancy-label">Average Occupancy:</div>
-                        <div class="occupancy-value" id="avgValue">0</div>
-                    </div>
+        <button class="exportButton btn btn-success" id="exportWaitingArea">
+          Export Waiting Area
+        </button>
+        <button class="exportButton btn btn-success" id="exportCustomsArea">
+          Export Customs Area
+        </button>
+      </div>
 
-                    <div class="occupancy-pair">
-                        <div class="occupancy-label">Peak Occupancy:</div>
-                        <div class="occupancy-value" id="peakValue">0</div>
-                    </div>
-                </div>
+      <div class="item content">
+        <div class="chart-container">
+          <h2>Waiting Area Occupancy</h2>
+          <canvas id="waitingAreaChart" width="300" height="50"></canvas>
+          <div class="statistics">
+            <div class="occupancy-pair">
+              <div class="occupancy-label">Average Occupancy:</div>
+              <div class="occupancy-value" id="avgValue">0</div>
             </div>
 
-            <div class="chart-container">
-                <h2>Customs Area Occupancy</h2>
-                <canvas id="customsAreaChart" width="300" height="50"></canvas>
-                <div class="statistics">
-                    <div class="occupancy-pair">
-                        <div class="occupancy-label">Average Occupancy:</div>
-                        <div class="occupancy-value" id="avgCustomOccupancyValue"></div>
-                    </div>
-
-                    <div class="occupancy-pair">
-                        <div class="occupancy-label">Peak Occupancy:</div>
-                        <div class="occupancy-value" id="peakCustomOccupancyValue"></div>
-                    </div>
-                </div>
+            <div class="occupancy-pair">
+              <div class="occupancy-label">Peak Occupancy:</div>
+              <div class="occupancy-value" id="peakValue">0</div>
             </div>
+          </div>
         </div>
+
+        <div class="chart-container">
+          <h2>Customs Area Occupancy</h2>
+          <canvas id="customsAreaChart" width="300" height="50"></canvas>
+          <div class="statistics">
+            <div class="occupancy-pair">
+              <div class="occupancy-label">Average Occupancy:</div>
+              <div class="occupancy-value" id="avgCustomOccupancyValue"></div>
+            </div>
+
+            <div class="occupancy-pair">
+              <div class="occupancy-label">Peak Occupancy:</div>
+              <div class="occupancy-value" id="peakCustomOccupancyValue"></div>
+            </div>
+          </div>
+        </div>
+      </div>
     </div>
     <script src="{{ url_for('static', filename='javascript.js') }}"></script>
     <script src="static/js/bootstrap.bundle.min.js"></script>
-</body>
-
+  </body>
 </html>
