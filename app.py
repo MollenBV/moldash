@@ -31,6 +31,8 @@ number_of_seats_in_waiting_area = 10
 
 CHART_TIME_FRAME = timedelta(minutes=1)
 
+
+
 ################################################################################
 ### DATABASE
 ################################################################################
@@ -60,10 +62,10 @@ with app.app_context():
     db.create_all()
 
 
+
 ################################################################################
 ### FUNCTIONS CALCULATIONS
 ################################################################################
-
 
 def calculate_free_seats(taken_seats, total_seats=number_of_seats_in_waiting_area):
     """
