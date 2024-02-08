@@ -4,7 +4,6 @@ from datetime import datetime, timedelta, timezone
 from sqlalchemy import or_, and_, func, DateTime
 import traceback, csv, io
 from json.decoder import JSONDecodeError
-import random
 
 ################################################################################
 ### CONFIG
