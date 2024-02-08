@@ -56,6 +56,11 @@ class CustomsArea(db.Model):
     timestamp = db.Column(DateTime, default=datetime.utcnow)
 
 
+
+with app.app_context():
+    db.create_all()
+
+
 ################################################################################
 ### FUNCTIONS CALCULATIONS
 ################################################################################
@@ -75,6 +80,7 @@ def calculate_free_seats(taken_seats, total_seats=number_of_seats_in_waiting_are
     calculate_free_seats = total_seats - taken_seats
     return calculate_free_seats
 
+
 def calculate_total_people_in_waiting_area(taken_seats, total_seats=number_of_seats_in_waiting_area, multiplier=1.3):
     """
     Function to calculate the total number of people in the space, assuming not every person in the space is seated (standing, leaning, walking, sitting on the floor).
@@ -93,9 +99,97 @@ def calculate_total_people_in_waiting_area(taken_seats, total_seats=number_of_se
     return estimated_people_with_multiplier
 
 
+def calculate_average_occupancy(data_points):
+    """
+    Calculate the average occupancy over multiple data points.
+    """
+    # Check if data_points is None, empty, or an empty string
+    if data_points is None or data_points == "":
+        return ""
+    
+    # Sum up taken seats and total seats from data points
+    total_taken_seats = sum(entry.taken_seats for entry in data_points)
+    total_total_seats = sum(entry.total_seats for entry in data_points)
 
-with app.app_context():
-    db.create_all()
+    # Check if the total total seats is zero to avoid division by zero
+    if total_total_seats == 0:
+        return 0
+
+    # Calculate the average occupancy
+    average_occupancy = (total_taken_seats / total_total_seats) * 100
+    return round(average_occupancy, 1)
+
+
+def calculate_peak_occupancy(data_points):
+    """
+    Function to calculate the peak occupancy over multiple data points.
+    """
+    # Check if data_points is None, empty, or an empty list
+    if data_points is None or data_points == "" or data_points == []:
+        return ""
+    
+    # Calculate occupancies from data points
+    occupancies = [(entry.taken_seats / entry.total_seats) * 100 for entry in data_points if entry.total_seats != 0]
+
+    # Check if occupancies list is empty
+    if not occupancies:
+        return "" 
+
+    # Find the maximum occupancy
+    max_occupancy = max(occupancies)
+    return round(max_occupancy, 1)
+
+
+def get_average_occupancy_custom(data_points):
+    """
+    Function to calculate the occupancy rate in the Customs Area
+    """
+    # Check if data_points is None, empty, or an empty list
+    if data_points is None or data_points == "" or data_points == []:
+        return ""
+    
+    # Calculate the total occupancy using SQLAlchemy aggregate function
+    total_occupancy = db.session.query(func.avg(CustomsArea.current_people_count)).scalar()
+    return total_occupancy
+
+
+def get_peak_occupancy_custom(data_points):
+    """
+    Function to calculate the peak occupancy rate in the Customs Area
+    """
+    # Check if data_points is None, empty, or an empty list
+    if data_points is None or data_points == "" or data_points == []:
+        return ""
+    
+    # Calculate the peak occupancy using SQLAlchemy aggregate function
+    peak_occupancy = db.session.query(func.max(CustomsArea.current_people_count)).scalar()
+    return peak_occupancy
+
+
+def calculate_taken_seats_dict(sensor_id, sensor_status, dictionary=seat_sensor_dict):
+    """
+    Function to calculate how many seats are taken inside the Waiting Area
+    """
+    # Print sensor_id and sensor_status for debugging purposes
+    print(f"Sensor ID: {sensor_id}")
+    print(f"Sensor Status: {sensor_status}")
+
+    # Update the dictionary with sensor_id and sensor_status
+    dictionary[sensor_id] = sensor_status  
+
+    # Count the number of seats that are "AAN" (occupied) in the dictionary
+    taken_seats = sum(1 for value in dictionary.values() if value == "AAN")
+
+    # Print the updated dictionary and the number of taken seats for debugging purposes
+    print(f"Updated seat_sensor_dict: {dictionary}")
+    print(f"Taken Seats: {taken_seats}")
+    return taken_seats
+
+
+
+################################################################################
+### APP ROUTES
+################################################################################
 
 @app.route('/')
 def main_page():
@@ -124,7 +218,6 @@ def main_page():
     
     # Render the dashboard.html template, passing the waiting_area_data and customs_area_data to be used in the template
     return render_template('dashboard.html', waiting_area=waiting_area_data, customs_area=customs_area_data)
-
 
 
 @app.route('/waiting_area', methods=['POST'])
@@ -184,7 +277,6 @@ def receive_waiting_area_data():
         return jsonify({'message': 'Error processing the Waiting Area data'}), 500
 
 
-
 @app.route('/customs_area', methods=['POST'])
 def receive_customs_area_data():
     """
@@ -235,6 +327,101 @@ def receive_customs_area_data():
         print(f"An error has occurred: {e}")
         return jsonify({'message': 'Error'}), 500
 
+
+@app.route('/waiting_area_data')
+def waiting_area_data():
+    """
+    Route for javascript to get Waiting Area data.
+    """
+    # Call function to get data for the Waiting Area
+    data = get_waiting_area_data()
+    return jsonify(data)
+
+
+@app.route('/customs_area_data')
+def customs_area_data():
+    """
+    Route for javascript to get Customs Area data.
+    """
+    # Call function to get data for the Customs Area
+    data = get_customs_area_data()
+    return jsonify(data)
+
+
+@app.route('/get_statistics', methods=['GET'])
+def get_statistics():
+    """
+    Function to send the statistics to the webpage. This function is called by our Javascript file
+    """
+    try:
+        # Get start_date and end_date from the query parameters
+        start_date = request.args.get('start_date')
+        end_date = request.args.get('end_date')
+
+        # Convert start_date and end_date to datetime objects
+        start_datetime = datetime.strptime(start_date, '%Y-%m-%d')
+        end_datetime = datetime.strptime(end_date, '%Y-%m-%d') + timedelta(days=1)  # Add one day to include the end_date
+
+        print(f"Start Date: {start_datetime}")
+        print(f"End Date: {end_datetime}")
+
+        # Query the CustomsArea table in the database for data within the specified range
+        customs_area_data = CustomsArea.query.filter(
+            or_(
+                and_(CustomsArea.timestamp >= start_datetime, CustomsArea.timestamp < end_datetime),
+                and_(CustomsArea.timestamp >= start_datetime, CustomsArea.timestamp < end_datetime)
+            )
+        ).all()
+
+        # Sort the customs area data based on timestamp
+        customs_area_data = sorted(customs_area_data, key=lambda entry: entry.timestamp)
+
+        # Query the WaitingArea table in the database for data within the specified range
+        waiting_area_data = WaitingArea.query.filter(
+            or_(
+                and_(WaitingArea.timestamp >= start_datetime, WaitingArea.timestamp < end_datetime),
+                and_(WaitingArea.timestamp >= start_datetime, WaitingArea.timestamp < end_datetime)
+            )
+        ).all()
+
+        # Sort the waiting area data based on timestamp
+        waiting_area_data = sorted(waiting_area_data, key=lambda entry: entry.timestamp)
+
+        # Initialize variables to store statistics
+        avg_occupancy_waiting = peak_occupancy_waiting = avg_wait_time_waiting = ""
+        avg_occupancy_custom = peak_occupancy_custom = avg_passenger_turnaround_time_custom = avg_wait_time_custom = ""
+
+        # Calculate statistics for waiting area if data is available
+        if waiting_area_data:
+            avg_occupancy_waiting = calculate_average_occupancy(waiting_area_data)
+            peak_occupancy_waiting = calculate_peak_occupancy(waiting_area_data)
+
+        # Calculate statistics for customs area if data is available
+        if customs_area_data:
+            avg_occupancy_custom = get_average_occupancy_custom(customs_area_data)
+            peak_occupancy_custom = get_peak_occupancy_custom(customs_area_data)
+
+        # Return the statistics as JSON response
+        return jsonify({
+            'avg_occupancy_waiting': avg_occupancy_waiting,
+            'peak_occupancy_waiting': peak_occupancy_waiting,
+            'avg_occupancy_custom': avg_occupancy_custom,
+            'peak_occupancy_custom': peak_occupancy_custom,
+            'avg_passenger_turnaround_time': avg_passenger_turnaround_time_custom,
+            'avg_wait_time_custom': avg_wait_time_custom,
+        })
+
+    except Exception as e:
+        # Handle any exceptions and return an error message
+        print(f"An error occurred: {str(e)}")
+        traceback.print_exc()
+        return jsonify({'error': 'Internal Server Error'}), 500
+
+
+
+################################################################################
+### FUNCTIONS AND ROUTES FOR ChartJS
+################################################################################
 
 def get_waiting_area_data():
     """
@@ -351,7 +538,6 @@ def get_customs_area_data():
     return data
 
 
-
 @app.route('/get_date_range', methods=['GET'])
 def get_date_range():
     """
@@ -458,163 +644,9 @@ def get_date_range():
 
 
 
-
-def calculate_average_occupancy(data_points):
-    """
-    Calculate the average occupancy over multiple data points.
-    """
-    # Check if data_points is None, empty, or an empty string
-    if data_points is None or data_points == "":
-        return ""
-    
-    # Sum up taken seats and total seats from data points
-    total_taken_seats = sum(entry.taken_seats for entry in data_points)
-    total_total_seats = sum(entry.total_seats for entry in data_points)
-
-    # Check if the total total seats is zero to avoid division by zero
-    if total_total_seats == 0:
-        return 0
-
-    # Calculate the average occupancy
-    average_occupancy = (total_taken_seats / total_total_seats) * 100
-    return round(average_occupancy, 1)
-
-
-def calculate_peak_occupancy(data_points):
-    """
-    Function to calculate the peak occupancy over multiple data points.
-    """
-    # Check if data_points is None, empty, or an empty list
-    if data_points is None or data_points == "" or data_points == []:
-        return ""
-    
-    # Calculate occupancies from data points
-    occupancies = [(entry.taken_seats / entry.total_seats) * 100 for entry in data_points if entry.total_seats != 0]
-
-    # Check if occupancies list is empty
-    if not occupancies:
-        return "" 
-
-    # Find the maximum occupancy
-    max_occupancy = max(occupancies)
-    return round(max_occupancy, 1)
-
-
-def get_average_occupancy_custom(data_points):
-    """
-    Function to calculate the occupancy rate in the Customs Area
-    """
-    # Check if data_points is None, empty, or an empty list
-    if data_points is None or data_points == "" or data_points == []:
-        return ""
-    
-    # Calculate the total occupancy using SQLAlchemy aggregate function
-    total_occupancy = db.session.query(func.avg(CustomsArea.current_people_count)).scalar()
-    return total_occupancy
-
-
-def get_peak_occupancy_custom(data_points):
-    """
-    Function to calculate the peak occupancy rate in the Customs Area
-    """
-    # Check if data_points is None, empty, or an empty list
-    if data_points is None or data_points == "" or data_points == []:
-        return ""
-    
-    # Calculate the peak occupancy using SQLAlchemy aggregate function
-    peak_occupancy = db.session.query(func.max(CustomsArea.current_people_count)).scalar()
-    return peak_occupancy
-
-
-def calculate_taken_seats_dict(sensor_id, sensor_status, dictionary=seat_sensor_dict):
-    """
-    Function to calculate how many seats are taken inside the Waiting Area
-    """
-    # Print sensor_id and sensor_status for debugging purposes
-    print(f"Sensor ID: {sensor_id}")
-    print(f"Sensor Status: {sensor_status}")
-
-    # Update the dictionary with sensor_id and sensor_status
-    dictionary[sensor_id] = sensor_status  
-
-    # Count the number of seats that are "AAN" (occupied) in the dictionary
-    taken_seats = sum(1 for value in dictionary.values() if value == "AAN")
-
-    # Print the updated dictionary and the number of taken seats for debugging purposes
-    print(f"Updated seat_sensor_dict: {dictionary}")
-    print(f"Taken Seats: {taken_seats}")
-    return taken_seats
-
-
-@app.route('/get_statistics', methods=['GET'])
-def get_statistics():
-    """
-    Function to send the statistics to the webpage. This function is called by our Javascript file
-    """
-    try:
-        # Get start_date and end_date from the query parameters
-        start_date = request.args.get('start_date')
-        end_date = request.args.get('end_date')
-
-        # Convert start_date and end_date to datetime objects
-        start_datetime = datetime.strptime(start_date, '%Y-%m-%d')
-        end_datetime = datetime.strptime(end_date, '%Y-%m-%d') + timedelta(days=1)  # Add one day to include the end_date
-
-        print(f"Start Date: {start_datetime}")
-        print(f"End Date: {end_datetime}")
-
-        # Query the CustomsArea table in the database for data within the specified range
-        customs_area_data = CustomsArea.query.filter(
-            or_(
-                and_(CustomsArea.timestamp >= start_datetime, CustomsArea.timestamp < end_datetime),
-                and_(CustomsArea.timestamp >= start_datetime, CustomsArea.timestamp < end_datetime)
-            )
-        ).all()
-
-        # Sort the customs area data based on timestamp
-        customs_area_data = sorted(customs_area_data, key=lambda entry: entry.timestamp)
-
-        # Query the WaitingArea table in the database for data within the specified range
-        waiting_area_data = WaitingArea.query.filter(
-            or_(
-                and_(WaitingArea.timestamp >= start_datetime, WaitingArea.timestamp < end_datetime),
-                and_(WaitingArea.timestamp >= start_datetime, WaitingArea.timestamp < end_datetime)
-            )
-        ).all()
-
-        # Sort the waiting area data based on timestamp
-        waiting_area_data = sorted(waiting_area_data, key=lambda entry: entry.timestamp)
-
-        # Initialize variables to store statistics
-        avg_occupancy_waiting = peak_occupancy_waiting = avg_wait_time_waiting = ""
-        avg_occupancy_custom = peak_occupancy_custom = avg_passenger_turnaround_time_custom = avg_wait_time_custom = ""
-
-        # Calculate statistics for waiting area if data is available
-        if waiting_area_data:
-            avg_occupancy_waiting = calculate_average_occupancy(waiting_area_data)
-            peak_occupancy_waiting = calculate_peak_occupancy(waiting_area_data)
-
-        # Calculate statistics for customs area if data is available
-        if customs_area_data:
-            avg_occupancy_custom = get_average_occupancy_custom(customs_area_data)
-            peak_occupancy_custom = get_peak_occupancy_custom(customs_area_data)
-
-        # Return the statistics as JSON response
-        return jsonify({
-            'avg_occupancy_waiting': avg_occupancy_waiting,
-            'peak_occupancy_waiting': peak_occupancy_waiting,
-            'avg_occupancy_custom': avg_occupancy_custom,
-            'peak_occupancy_custom': peak_occupancy_custom,
-            'avg_passenger_turnaround_time': avg_passenger_turnaround_time_custom,
-            'avg_wait_time_custom': avg_wait_time_custom,
-        })
-
-    except Exception as e:
-        # Handle any exceptions and return an error message
-        print(f"An error occurred: {str(e)}")
-        traceback.print_exc()
-        return jsonify({'error': 'Internal Server Error'}), 500
-
+################################################################################
+### FUNCTIONS FOR CSV EXPORT
+################################################################################
 
 @app.route('/export_data_to_csv')
 def export_data_to_csv():
@@ -671,23 +703,6 @@ def export_data_to_csv():
         traceback.print_exc()
         return jsonify({'error': 'Internal Server Error'}), 500
 
-@app.route('/waiting_area_data')
-def waiting_area_data():
-    """
-    Route for javascript to get Waiting Area data.
-    """
-    # Call function to get data for the Waiting Area
-    data = get_waiting_area_data()
-    return jsonify(data)
-
-@app.route('/customs_area_data')
-def customs_area_data():
-    """
-    Route for javascript to get Customs Area data.
-    """
-    # Call function to get data for the Customs Area
-    data = get_customs_area_data()
-    return jsonify(data)
 
 if __name__ == '__main__':
     app.run(debug=True, port=80, host="0.0.0.0")
